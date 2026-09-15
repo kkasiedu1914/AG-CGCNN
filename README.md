@@ -81,12 +81,6 @@ Launch them with `jupyter lab`. Run notebook 01 before notebook 02. Use a new ru
 
 **[Usage guide](docs/USAGE.md) · [Data format](docs/DATA.md) · [Provenance and changes](docs/PROVENANCE.md) · [Validation](docs/VALIDATION.md) · [Security](SECURITY.md)**
 
-## Research status and reproducibility
-
-This is a research release; **active development is currently paused**. The maintained entry points provide a cleaned and tested implementation of the recovered architecture. Historical experiments are retained as reference snapshots, with notebook outputs cleared and obsolete upload helpers excluded.
-
-Full MOF databases, original serialized experiment objects and trained research checkpoints are not bundled in the Git repository. The data guide describes the required inputs and original sources. Reproducing the paper's numbers requires matching the original datasets, labels, splits, hyperparameters and checkpoints; the release smoke tests do not establish numerical reproduction of the paper.
-
 ## Credit and citation
 
 Please cite both the AG-CGCNN paper and the foundational CGCNN paper when using this work. The original CGCNN implementation is **Copyright (c) 2018 Tian Xie**, licensed under MIT; the notice is retained in [LICENSE](LICENSE). See [NOTICE.md](NOTICE.md) for component attribution and the distinction between code and figure licenses.
