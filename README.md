@@ -1,4 +1,4 @@
-# AG-CGCNN
+# Atomistic-Geometric Crystal Graph Convolutional Neural Network (AG-CGCNN)
 
 ### Mechanistic insights from crystal structure to gas adsorption
 
