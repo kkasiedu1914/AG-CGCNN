@@ -6,6 +6,4 @@ Credentials, automatic cloud uploads and historical broad file-collection utilit
 
 These protections reduce known risks; they do not guarantee that every vulnerability is absent. Crystal parsers and numerical libraries remain dependencies, and hostile files can consume CPU or memory. Process externally supplied structures/checkpoints in an isolated environment with resource limits. Keep dependencies updated and run `python -m pip_audit` in the installed environment.
 
-Historical source snapshots are reference material, not supported executable entry points. They may show old unrestricted deserialization and environment-specific assumptions. Use the `agcgcnn` package and the two documented notebooks for execution.
-
-Report suspected issues privately to the repository owner through GitHub's available private security reporting mechanism. Do not post credentials, private datasets or executable payloads in public issues. Active development is paused, so response times are not guaranteed.
+Report suspected issues privately to the me through GitHub. Do not post credentials, private datasets or executable payloads in public issues.
