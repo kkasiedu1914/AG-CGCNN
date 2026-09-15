@@ -1,0 +1,92 @@
+{
+ "nbformat": 4,
+ "nbformat_minor": 0,
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "cd /content/drive/MyDrive/work_cgcnn/KK_Multiclass_cgcnn_1/test_results"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Import libraries\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "import pandas as pd\n",
+    "import numpy as np"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Load data\n",
+    "df = pd.read_csv(\"/content/drive/MyDrive/work_cgcnn/KK_Multiclass_cgcnn_1/test_results/test_results AUC 0.802.csv\")"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Removing the Material_ID column\n",
+    "remove_ids = df.columns[0]\n",
+    "test_results = df.drop(remove_ids,axis=1)\n",
+    "print(test_results.head(),'\\n')\n",
+    "Tmin = test_results.min(axis=0).min(axis = 0)\n",
+    "Tmax = test_results.max(axis=0).max(axis = 0)\n",
+    "Truelabel = test_results.columns[0]\n",
+    "PredictLabel = test_results.columns[1]"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Visuallizing the CGCNN model performance\n",
+    "\n",
+    "fig = plt.figure()\n",
+    "axis = fig.add_axes([0.1,0.1,1.5,1.5])\n",
+    "\n",
+    "axis.set_xlim(Tmin,Tmax)\n",
+    "axis.set_ylim(Tmin,Tmax)\n",
+    "x1 = np.linspace(*axis.get_xlim()) # generates 45 degree angle\n",
+    "axis.plot(x1, x1)  # add 45-deg line\n",
+    "axis.plot(Truelabel,PredictLabel,marker ='o',linestyle = 'none', color ='red', markersize = 10)\n",
+    "axis.set_title('Parity Plot',fontsize = 20)\n",
+    "axis.set_xlabel(\"True Labels\",fontsize = 20)\n",
+    "axis.set_ylabel(\"Predicted Labels\",fontsize = 20)"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ]
+}

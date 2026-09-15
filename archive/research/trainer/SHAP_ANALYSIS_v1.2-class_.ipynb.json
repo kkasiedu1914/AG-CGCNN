@@ -1,0 +1,1082 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cd /content/drive/MyDrive/work_cgcnn/cgcnn_Trainer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install pymatgen shap > /dev/null 2>&1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "import torch\n",
+    "import numpy as np\n",
+    "import torch.nn as nn\n",
+    "import pandas as pd\n",
+    "from ast import literal_eval\n",
+    "import os\n",
+    "import keras\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import shap"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load model Directly\n",
+    "from cgcnn.model import CrystalGraphConvNet_1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Predict with a trained model\n",
+    "!python predict.py h2_2bar_32kTrainedmodel_best.pth.tar data hMof_cifs --task classification --Additional_feat_num 5 --Class_num 4 --id_prop h2_2bar_shaptestset_9754  --useable_samples 1500"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initialize model for surogatoin using the consistent hyper-parameters used\n",
+    "model = CrystalGraphConvNet_1(orig_atom_fea_len = 92, nbr_fea_len= 41,\n",
+    "                                atom_fea_len=64,\n",
+    "                                added_fea_len=5,\n",
+    "                                classnum = 4,\n",
+    "                                n_conv=3,\n",
+    "                                h_fea_len=128,\n",
+    "                                n_h=1,\n",
+    "                                classification=True)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load the parent model state dictionary\n",
+    "model_state_dict = torch.load('h2_2bar_32kTrainedmodel_best.pth.tar')\n",
+    "\n",
+    "# Apply the state dictionary to your model\n",
+    "model.load_state_dict(model_state_dict['state_dict'])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#load up some pytorch equivalent data if needed\n",
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('predicted_results_20240325_092033.csv',header=None)\n",
+    "\n",
+    "y = [torch.tensor(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [torch.tensor(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "df.drop(df.columns[[1, 2]], axis=1, inplace=True)\n",
+    "\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,3):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a PyTorch tensor\n",
+    "y_prob = [torch.tensor(row) for row in df.iloc[:,1]]\n",
+    "x = [torch.tensor(row,requires_grad=True) for row in df.iloc[:,2]]\n",
+    "\n",
+    "\n",
+    "# Create a 2D tensor from the list of tensors\n",
+    "y = torch.stack(y)\n",
+    "y_hat = torch.stack(y_hat)\n",
+    "y_prob = torch.stack(y_prob)\n",
+    "x = torch.stack(x)\n",
+    "\n",
+    "# Print the resulting 2D tensor\n",
+    "#print(type(x))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "# Define the original PyTorch model class\n",
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "        self.conv_to_fc_softplus = nn.Softplus()\n",
+    "        self.conv_to_fc = nn.Linear(input_size, hidden_size)\n",
+    "        self.fc_out = nn.Linear(hidden_size, output_size)\n",
+    "        self.softmax = nn.Softmax(dim=1)  # Add softmax here\n",
+    "\n",
+    "    def forward(self, crys_fea):\n",
+    "        crys_fea = self.conv_to_fc(self.conv_to_fc_softplus(crys_fea))\n",
+    "        crys_fea = self.conv_to_fc_softplus(crys_fea)\n",
+    "        out = self.fc_out(crys_fea)\n",
+    "        out = self.softmax(out)  # Applying softmax to the output like original cgcnn\n",
+    "        return out\n",
+    "\n",
+    "# Create an instance of the original PyTorch model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 4\n",
+    "original_model = surogateModel(input_size, hidden_size, output_size)\n",
+    "\n",
+    "# Assign the weights from the original model to the surogate model\n",
+    "original_model.conv_to_fc.weight = model.conv_to_fc.weight\n",
+    "original_model.conv_to_fc.bias = model.conv_to_fc.bias\n",
+    "original_model.fc_out.weight = model.fc_out.weight\n",
+    "original_model.fc_out.bias = model.fc_out.bias\n",
+    "\n",
+    "# Define the equivalent PyTorch sequential model using the nn.Sequential API\n",
+    "# Use the same architecture, activation function, weights and biases as the original model\n",
+    "sequential_model = nn.Sequential(\n",
+    "    nn.Flatten(),\n",
+    "    nn.Softplus(),\n",
+    "    nn.Linear(input_size, hidden_size, bias=True),\n",
+    "    nn.Softplus(),\n",
+    "    nn.Linear(hidden_size, output_size, bias=True),\n",
+    "    nn.Softmax(dim=1)  # Add softmax here too\n",
+    ")\n",
+    "# Copy the weights and biases from the original model to the sequential model\n",
+    "sequential_model[2].weight.data = original_model.conv_to_fc.weight.data\n",
+    "sequential_model[2].bias.data = original_model.conv_to_fc.bias.data\n",
+    "sequential_model[4].weight.data = original_model.fc_out.weight.data\n",
+    "sequential_model[4].bias.data = original_model.fc_out.bias.data\n",
+    "\n",
+    "# Test the sequential model on some sample input\n",
+    "# You can change the sample input as needed\n",
+    "sample_input = x # 10 samples with 69 features each\n",
+    "sequential_output = sequential_model(sample_input)\n",
+    "print(\"Sequential output:\", sequential_output)\n",
+    "\n",
+    "# Test the original model on the same sample input\n",
+    "original_output = original_model(sample_input)\n",
+    "print(\"Original output:\", original_output)\n",
+    "\n",
+    "# Compare the outputs of the two models\n",
+    "# They should be very close if not identical\n",
+    "print(\"Difference:\", torch.abs(sequential_output - original_output))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load up some numpy data\n",
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('predicted_results_20240325_092033.csv',header=None)\n",
+    "\n",
+    "y = [np.array(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [np.array(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "df.drop(df.columns[[1, 2]], axis=1, inplace=True)\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,3):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a numpy array\n",
+    "y_prob = [np.array(row) for row in df.iloc[:,1]]\n",
+    "x = [np.array(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "# Stack the list of numpy arrays to create a 2D array\n",
+    "y = np.stack(y)\n",
+    "y_prob = np.stack(y_prob)\n",
+    "#y = y[:,1:] # Use one isoterm\n",
+    "y_hat = np.stack(y_hat)\n",
+    "x = np.stack(x)\n",
+    "\n",
+    "# Print the resulting 2D array\n",
+    "#print(x)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create an instance of the PyTorch model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 4\n",
+    "pytorch_model = original_model\n",
+    "\n",
+    "# Define a function to convert PyTorch tensors to NumPy arrays\n",
+    "def to_numpy(tensor):\n",
+    "    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()\n",
+    "\n",
+    "# Get the weights and biases of the PyTorch model as NumPy arrays\n",
+    "w1 = to_numpy(pytorch_model.conv_to_fc.weight)\n",
+    "b1 = to_numpy(pytorch_model.conv_to_fc.bias)\n",
+    "w2 = to_numpy(pytorch_model.fc_out.weight)\n",
+    "b2 = to_numpy(pytorch_model.fc_out.bias)\n",
+    "\n",
+    "\n",
+    "# Define the Keras model using the Sequential API\n",
+    "keras_model = keras.models.Sequential([\n",
+    "    keras.layers.Activation(\"softplus\", input_shape=(input_size,)),\n",
+    "    keras.layers.Dense(hidden_size, activation=\"softplus\", weights=[w1.T, b1]),\n",
+    "    keras.layers.Dense(output_size, activation=\"linear\", weights=[w2.T, b2]),\n",
+    "    keras.layers.Activation('softmax')\n",
+    "])\n",
+    "# # Test the Keras model on some sample input\n",
+    "# # You can change the sample input as needed\n",
+    "sample_input = x # 10 samples with 69 features each\n",
+    "keras_output = keras_model.predict(sample_input)\n",
+    "print(\"Keras output:\", keras_output[0:10])\n",
+    "\n",
+    "# Convert the sample input to a PyTorch tensor\n",
+    " #sample_input = torch.from_numpy(sample_input).float()\n",
+    " #pytorch_output = pytorch_model(sample_input)\n",
+    " #print(\"PyTorch output:\", normalizer.denorm(pytorch_output))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## **MODEL SHAP ANALYSIS**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Label data features\n",
+    "# save the array as a pandas dataframe with the names that you specified\n",
+    "def featlabeler(x):\n",
+    "  columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "  if x.ndim == 1:\n",
+    "    x = np.reshape(x, (1, 69))\n",
+    "  x = pd.DataFrame(x, columns=columns)\n",
+    "  return x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x = featlabeler(x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Use KernelExplainer to explain the Keras model predictions\n",
+    "explainer = shap.KernelExplainer(keras_model.predict, x[0:100])\n",
+    "shap_values = explainer.shap_values(x[0:100])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save explainer object\n",
+    "import pickle\n",
+    "\n",
+    "# Save the SHAP values as a pickle file\n",
+    "with open(\"shap_values_hclass2bar_1500_samp.pkl\", \"wb\") as f:\n",
+    "    pickle.dump(shap_values, f)\n",
+    "\n",
+    "# Save the explainer object as a pickle file\n",
+    "with open(\"explainer_hclass2bar_1500_samp.pkl\", \"wb\") as f:\n",
+    "    pickle.dump(explainer, f)\n",
+    "\n",
+    "# You can also save other objects that the explainer creates, such as the expected value\n",
+    "with open(\"expected_value_hclass2bar_1500_samp.pkl\", \"wb\") as f:\n",
+    "    pickle.dump(explainer.expected_value, f)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Open the file in read binary mode\n",
+    "import pickle\n",
+    "\n",
+    "with open(\"shap_values_hclass2bar_1500_samp.pkl\", \"rb\") as f:\n",
+    "    # Load the SHAP values from the file\n",
+    "    shap_values = pickle.load(f)\n",
+    "with open(\"explainer_hclass2bar_1500_samp.pkl\", \"rb\") as f:\n",
+    "    # Load the SHAP values from the file\n",
+    "    explainer = pickle.load(f)\n",
+    "with open(\"expected_value_hclass2bar_1500_samp.pkl\", \"rb\") as f:\n",
+    "    # Load the SHAP values from the file\n",
+    "    explainer.expected_value = pickle.load(f)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(np.shape(shap_values))\n",
+    "print(shap_values[0,:,0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(np.shape(shap_values))\n",
+    "print(np.shape(x))\n",
+    "#print((x.iloc[0]))\n",
+    "#print(shap_values[0])\n",
+    "#keras_output"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Plot the force plots for each sample\n",
+    "shap.initjs() # Run this anytime you want to see a visual. explainer.expected_value[0] is the average prediction\n",
+    "shap.plots.force(explainer.expected_value[0], shap_values[:,:,0],x.iloc[:,:]) # Make sure its of the format explainer.expected_value[n], shap_values[m,:,n], n is the selected class, m is the sample\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def separate_shap_values_by_predicted_class(shap_values, predicted_probabilities, sample_features):\n",
+    "    # Assuming shap_values shape is (num_samples, num_features, num_classes)\n",
+    "    # and predicted_probabilities shape is (num_samples, num_classes)\n",
+    "    # and sample_features shape is (num_samples, num_features)\n",
+    "    class_shap_values = {}\n",
+    "    for i in range(shap_values.shape[0]):\n",
+    "        # Get the index of the class with the highest probability for the i-th sample\n",
+    "        class_index = np.argmax(predicted_probabilities[i])\n",
+    "        # Check if the class_index is already in the dictionary\n",
+    "        if class_index not in class_shap_values:\n",
+    "            class_shap_values[class_index] = {'shap_values': [], 'features': []}\n",
+    "        # Append the SHAP values and the corresponding features for the i-th sample and the predicted class\n",
+    "        class_shap_values[class_index]['shap_values'].append(shap_values[i, :, class_index])\n",
+    "        class_shap_values[class_index]['features'].append(sample_features[i])\n",
+    "\n",
+    "    # Convert lists to numpy arrays\n",
+    "    for class_index in class_shap_values:\n",
+    "        class_shap_values[class_index]['shap_values'] = np.array(class_shap_values[class_index]['shap_values'])\n",
+    "        class_shap_values[class_index]['features'] = np.array(class_shap_values[class_index]['features'])\n",
+    "\n",
+    "    return class_shap_values"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "class_shap_values = separate_shap_values_by_predicted_class(shap_values,keras_output[0:100],x[0:100])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(len(class_shap_values[3]['shap_values']))\n",
+    "#print(np.shape(class_shap_values[0]['shap_values'][0]))\n",
+    "#print(class_shap_values[0]['shap_values'][0])\n",
+    "#print(x[0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Force plots for individual classes\n",
+    "shap.initjs() # Run this anytime you want to see a visual. explainer.expected_value[0] is the average prediction\n",
+    "shap.plots.force(explainer.expected_value[1], class_shap_values[1]['shap_values'],featlabeler(class_shap_values[1]['features']))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "shap_values_cat = explainer(class_shap_values[0]['features'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# waterfall plot for first observation\n",
+    "shap.plots.waterfall(shap_values_cat[0, :, 0])\n",
+    "\n",
+    "# waterfall plot for first observation\n",
+    "#shap.plots.waterfall(shap_values_cat[12, :, 1])\n",
+    "\n",
+    "# waterfall plot for first observation\n",
+    "#shap.plots.waterfall(shap_values_cat[12, :, 2])\n",
+    "\n",
+    "# waterfall plot for first observation\n",
+    "#shap.plots.waterfall(shap_values_cat[12, :, 3])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "shap_values_clas0 = explainer(class_shap_values[0]['features'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# waterfall plot for first observation\n",
+    "shap.plots.waterfall(shap_values_clas0[0,:, 0],max_display=7) # If you do shap_values_clas0[0, 64:69, 0] you show only thoase contributions not the full picture"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def abs_mean_shap_plt(shap_values, color):\n",
+    "    x = shap_values[0]\n",
+    "    columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "    if x.ndim == 1:\n",
+    "        x = np.reshape(x, (1, 69))\n",
+    "    df = pd.DataFrame(x, columns=columns)\n",
+    "    y = df.abs().mean()\n",
+    "    crystal_sum = y[:64].sum()\n",
+    "    other_sums = y[64:]\n",
+    "    ordered_labels = [\"64 Crystal Features\", \"vf\", \"sa_tot_m2g\", \"sa_tot_m2cm3\", \"pld\", \"lcd\"]\n",
+    "    ordered_sums = [crystal_sum] + list(other_sums)\n",
+    "\n",
+    "    # Create a horizontal bar plot\n",
+    "    fig, ax = plt.subplots(figsize=(10, 6))\n",
+    "    bars = ax.barh(np.arange(6), ordered_sums, color=color)\n",
+    "\n",
+    "    # Label the bars with the modified order of feature names\n",
+    "    ax.set_yticks(np.arange(6))\n",
+    "    ax.set_yticklabels(ordered_labels)\n",
+    "    ax.set_xlabel(\"mean(|SHAP Value|)\")\n",
+    "    ax.set_ylabel(\"Features\")\n",
+    "\n",
+    "    # Annotate the sum values on the bars\n",
+    "    for bar in bars:\n",
+    "        width = bar.get_width()\n",
+    "        label_x_pos = width if width < 0 else width + 0.0001\n",
+    "        ax.text(label_x_pos, bar.get_y() + bar.get_height()/2, f'{width:.3f}', va='center')\n",
+    "\n",
+    "    # Show the plot\n",
+    "    plt.show()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "abs_mean_shap_plt(class_shap_values[3]['shap_values'],'black')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def abs_mean_shap_pltmult(shap_values_sets,class_labels):\n",
+    "    # Assuming shap_values_sets is a list of 4 arrays, each of shape (2, 69)\n",
+    "    columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "    colors = ['red', 'yellow', 'green', 'black']  # Different colors for each class\n",
+    "    class_labels = class_labels  # Labels for the legend\n",
+    "\n",
+    "    # Create a horizontal bar plot\n",
+    "    fig, ax = plt.subplots(figsize=(10, 6))\n",
+    "\n",
+    "    for i, shap_values in enumerate(shap_values_sets):\n",
+    "        # Take the mean of the two rows in each set of SHAP values\n",
+    "        mean_shap_values = np.mean(shap_values, axis=0)\n",
+    "        df = pd.DataFrame([mean_shap_values], columns=columns)\n",
+    "\n",
+    "        # Take the absolute mean of the features\n",
+    "        y = df.abs().mean()\n",
+    "\n",
+    "        # Find the absolute mean sum of the 64 features\n",
+    "        crystal_sum = y[:64].sum()\n",
+    "\n",
+    "        # Find the absolute sum of the other features\n",
+    "        other_sums = y[64:]\n",
+    "\n",
+    "        # Plot the crystal sum and the other sums\n",
+    "        ax.barh(np.arange(6), np.append(crystal_sum, other_sums), color=colors[i], alpha=0.5, label=class_labels[i])\n",
+    "\n",
+    "    # Label the bars with the modified order of feature names\n",
+    "    ordered_labels = [\"64 Crystal Features\", \"vf\", \"sa_tot_m2g\", \"sa_tot_m2cm3\", \"pld\", \"lcd\"]\n",
+    "    ax.set_yticks(np.arange(6))\n",
+    "    ax.set_yticklabels(ordered_labels)\n",
+    "\n",
+    "    # Add some titles and labels\n",
+    "    ax.set_xlabel(\"mean(|SHAP Value|)\")\n",
+    "    ax.set_ylabel(\"Features\")\n",
+    "\n",
+    "    # Add a legend\n",
+    "    ax.legend()\n",
+    "\n",
+    "    # Show the plot\n",
+    "    plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "abs_mean_shap_pltmult([class_shap_values[0]['shap_values'],class_shap_values[1]['shap_values'],\n",
+    "                       class_shap_values[2]['shap_values'],class_shap_values[3]['shap_values']],\n",
+    " ['Class 0', 'Class 1', 'Class 2', 'Class 3'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "# Plot the mean shap values for each feature\n",
+    "shap.summary_plot(shap_values, x, plot_type=\"bar\",)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(shap_values[0][0])\n",
+    "\n",
+    "# Convert the output to a NumPy array, and get the absolute values of the SHAP values\n",
+    "shap_values_abs = np.vstack(shap_values[0][0])\n",
+    "\n",
+    "# Sum the absolute SHAP values along the feature axis, and then along the class axis\n",
+    "shap_values_sum = np.sum(shap_values_abs, axis=1).sum()\n",
+    "\n",
+    "# Print the result\n",
+    "print(\"The sum of all the SHAP values for the instance is:\", shap_values_sum)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Custom feature importance\n",
+    "# Import matplotlib for plotting\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "# Use np.vstack to stack the SHAP values for all classes\n",
+    "shap_values_abs = np.abs(np.vstack(shap_values))\n",
+    "\n",
+    "# Sum the SHAP values for the first 64 features and the last 5 features\n",
+    "shap_values_sum = np.concatenate([shap_values_abs[:, :64].sum(axis=1, keepdims=True), shap_values_abs[:, -5:]], axis=1)\n",
+    "\n",
+    "# Get the feature names for the plot labels\n",
+    "# Use the names that you provided instead of the indexes\n",
+    "feature_names = [\"64 Crystal features\", \"vf\", \"sa_tot_m2g\", \"sa_tot_m2cm3\", \"pld\", \"lcd\"]\n",
+    "\n",
+    "# Plot the horizontal bar plot\n",
+    "plt.barh(feature_names, shap_values_sum.mean(axis=0))\n",
+    "plt.xlabel(\"Mean absolute SHAP value\")\n",
+    "plt.title(\"Feature importance\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Use np.vstack to stack the SHAP values for all classes\n",
+    "shap_values_abs = np.abs(np.vstack(shap_values))\n",
+    "\n",
+    "# Sum the SHAP values for the last 5 features and the first 64 features\n",
+    "shap_values_sum = np.array([shap_values_abs[:, -5:].sum(), shap_values_abs[:, :64].sum()])\n",
+    "\n",
+    "# Get the feature names for the plot labels\n",
+    "# Use the names that you provided instead of the indexes\n",
+    "feature_names = [\"Global features\", \"Crystal features\"]\n",
+    "\n",
+    "# Plot the horizontal bar plot\n",
+    "# Use the height argument to adjust the thickness of the bars\n",
+    "plt.barh(feature_names, shap_values_sum, height=0.17) # Changed this line\n",
+    "plt.xlabel(\"Sum of absolute SHAP value\")\n",
+    "plt.title(\"Feature importance\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create an explainer object\n",
+    "sequential_model\n",
+    "explainer = shap.DeepExplainer(sequential_model, x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Get SHAP values\n",
+    "shap_values = explainer.shap_values(x[:10])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#print(shap_values,type(shap_values[1]))\n",
+    "print(np.shape(shap_values[0]))\n",
+    "print(shap_values[0][0])\n",
+    "#len(shap_values)\n",
+    "#print('shapval_total_unnormed:',np.sum(shap_values[0][0]))\n",
+    "#print('Denormed Prediction:\\n', (torch.tensor(np.sum(shap_values[0][0]), dtype=torch.float32))*normalizer.std[1]+normalizer.mean[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x = shap_values[0]\n",
+    "\n",
+    "# create a horizontal bar plot\n",
+    "# save the array as a pandas dataframe with the names that you specified\n",
+    "columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "df = pd.DataFrame(x, columns=columns)\n",
+    "\n",
+    "# take the absolute sum of all the 10 rows\n",
+    "y = df.abs().mean()\n",
+    "\n",
+    "# find the absolute mean sum of the 64 features\n",
+    "crystal_sum = y[:64].sum()\n",
+    "\n",
+    "# find the absolute sum of the other features\n",
+    "other_sums = y[64:]\n",
+    "\n",
+    "ordered_labels = [\"64 Crystal Features\", \"vf\", \"sa_tot_m2g\", \"sa_tot_m2cm3\", \"pld\", \"lcd\"]\n",
+    "ordered_sums = [crystal_sum] + [other_sums[i] for i in [\"vf\", \"sa_tot_m2g\", \"sa_tot_m2cm3\", \"pld\", \"lcd\"]]\n",
+    "\n",
+    "# create a horizontal bar plot\n",
+    "fig, ax = plt.subplots(figsize=(10, 6))\n",
+    "\n",
+    "# plot the crystal sum and the other sums\n",
+    "ax.barh(np.arange(6), np.append(crystal_sum, other_sums), color=\"red\")\n",
+    "\n",
+    "# label the bars with the modified order of feature names\n",
+    "ax.set_yticks(np.arange(6))\n",
+    "ax.set_yticklabels(ordered_labels)\n",
+    "\n",
+    "# # add some annotations\n",
+    "# ax.text(crystal_sum + 5, 0.1, f\"Sum of 64 features: {crystal_sum}\")\n",
+    "# for i, s in enumerate(other_sums):\n",
+    "#     ax.text(s + 5, i + 1.1, f\"Sum of 1 feature: {s}\")\n",
+    "\n",
+    "# add some titles and labels\n",
+    "ax.set_title(\"Bar plot of the mean absolute sum of Shapley Values H$_2$\")\n",
+    "ax.set_xlabel(\"mean(|SHAP Value|)\")\n",
+    "ax.set_ylabel(\"Features\")\n",
+    "\n",
+    "# show the plot\n",
+    "plt.show()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Use np.vstack to stack the SHAP values for all classes\n",
+    "shap_values_abs = np.abs(np.vstack(shap_values[1]))\n",
+    "print((shap_values_abs[:, -5:]).mean(axis=0))\n",
+    "\n",
+    "# Sum the SHAP values for the last 5 features and the first 64 features\n",
+    "shap_values_sum = np.array([shap_values_abs[:, -5:].mean(axis=0).sum(), shap_values_abs[:, :64].mean(axis=0).sum()])\n",
+    "\n",
+    "# Get the feature names for the plot labels\n",
+    "# Use the names that you provided instead of the indexes\n",
+    "feature_names = [\"Global features\", \"Crystal features\"]\n",
+    "\n",
+    "# Plot the horizontal bar plot\n",
+    "\n",
+    "plt.barh(feature_names, shap_values_sum,height=0.17,color ='red') # Changed this line\n",
+    "plt.xlabel(\"Sum of absolute SHAP value\")\n",
+    "plt.title(\"Feature importance\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x = shap_values[0]\n",
+    "\n",
+    "# save the array as a pandas dataframe with the names that you specified\n",
+    "columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "df = pd.DataFrame(x, columns=columns)\n",
+    "\n",
+    "# take the absolute sum of all the 10 rows\n",
+    "y = df.abs().sum()\n",
+    "\n",
+    "# find the index of the maximum value\n",
+    "max_index = y.idxmax()\n",
+    "\n",
+    "# find the top 5 values and their indices\n",
+    "top_5 = y.nlargest(5)\n",
+    "top_5_indices = top_5.index\n",
+    "\n",
+    "# calculate the sum of the remaining 64 values\n",
+    "rest_sum = y.sum() - top_5.sum()\n",
+    "\n",
+    "# create a horizontal bar plot\n",
+    "fig, ax = plt.subplots(figsize=(10, 6))\n",
+    "\n",
+    "# plot the top 5 values and the rest sum\n",
+    "ax.barh(np.arange(6), np.append(top_5, rest_sum), color=\"blue\")\n",
+    "\n",
+    "# label the bars with the feature names\n",
+    "ax.set_yticks(np.arange(6))\n",
+    "ax.set_yticklabels(list(top_5_indices) + [\"Rest\"])\n",
+    "\n",
+    "# add some annotations\n",
+    "ax.text(top_5[-1] + 5, 4.9, f\"Max value: {top_5[-1]}\")\n",
+    "ax.text(top_5[-1] + 5, 4.8, f\"Index: {max_index}\")\n",
+    "ax.text(rest_sum + 5, 5.1, f\"Sum of 64 values: {rest_sum}\")\n",
+    "\n",
+    "# add some titles and labels\n",
+    "ax.set_title(\"Bar plot of the absolute sum of 10 arrays\")\n",
+    "ax.set_xlabel(\"Absolute sum\")\n",
+    "ax.set_ylabel(\"Features\")\n",
+    "\n",
+    "# show the plot\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# save the array as a pandas dataframe with the names that you specified\n",
+    "columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "df = pd.DataFrame(x, columns=columns)\n",
+    "\n",
+    "# take the absolute sum of all the 10 rows\n",
+    "y = df.abs().sum()\n",
+    "\n",
+    "# find the absolute sum of the 64 features\n",
+    "crystal_sum = y[:64].sum()\n",
+    "\n",
+    "# find the absolute sum of the other features\n",
+    "other_sum = y[64:].sum()\n",
+    "\n",
+    "# create a horizontal bar plot\n",
+    "fig, ax = plt.subplots(figsize=(10, 6))\n",
+    "\n",
+    "# plot the two sums\n",
+    "ax.barh(np.arange(2), [crystal_sum, other_sum], color=\"blue\")\n",
+    "\n",
+    "# label the bars with the feature names\n",
+    "ax.set_yticks(np.arange(2))\n",
+    "ax.set_yticklabels([\"Crystal Features\", \"Other Features\"])\n",
+    "\n",
+    "# add some annotations\n",
+    "ax.text(crystal_sum + 5, 0.1, f\"Sum of 64 features: {crystal_sum}\")\n",
+    "ax.text(other_sum + 5, 1.1, f\"Sum of 5 features: {other_sum}\")\n",
+    "\n",
+    "# add some titles and labels\n",
+    "ax.set_title(\"Bar plot of the absolute sum of 10 arrays\")\n",
+    "ax.set_xlabel(\"Absolute sum\")\n",
+    "ax.set_ylabel(\"Features\")\n",
+    "\n",
+    "# show the plot\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## ***SHAP ANALYSIS WITH XGBOOST***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# XGB with validation\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "import xgboost as xgb\n",
+    "from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error\n",
+    "\n",
+    "# First, split the data into a training set and a temporary set using an 80/20 split\n",
+    "X = x\n",
+    "y = y\n",
+    "X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.2, random_state=42)\n",
+    "\n",
+    "# Next, we split the temporary set into validation and test sets of equal size\n",
+    "X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.8, random_state=42)\n",
+    "\n",
+    "# Convert the datasets into DMatrixes\n",
+    "D_train = xgb.DMatrix(X_train, label=y_train)\n",
+    "D_val = xgb.DMatrix(X_val, label=y_val)\n",
+    "D_test = xgb.DMatrix(X_test, label=y_test)\n",
+    "\n",
+    "# Define the parameters for the XGBoost\n",
+    "param = {\n",
+    "    'eta': 0.3,\n",
+    "    'max_depth': 3,\n",
+    "    'objective': 'reg:squarederror'\n",
+    "}\n",
+    "\n",
+    "steps = 20  # The number of training iterations\n",
+    "\n",
+    "# Specify validation set to watch performance\n",
+    "evallist = [(D_val, 'eval'), (D_train, 'train')]\n",
+    "\n",
+    "# Train the model\n",
+    "model = xgb.train(param, D_train, steps, evallist)\n",
+    "\n",
+    "# Use the model to make predictions\n",
+    "preds = model.predict(D_test)\n",
+    "\n",
+    "# Calculate RMSE\n",
+    "rmse = np.sqrt(mean_squared_error(y_test, preds))\n",
+    "print(\"RMSE: %f\" % (rmse))\n",
+    "\n",
+    "# Calculate R-squared\n",
+    "r2 = r2_score(y_test, preds)\n",
+    "print(\"R-squared: %f\" % (r2))\n",
+    "\n",
+    "# Calculate MAE\n",
+    "mae = mean_absolute_error(y_test, preds)\n",
+    "print(\"MAE: %f\" % (mae))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from scipy.stats import gaussian_kde\n",
+    "\n",
+    "def parity_plot(x, y,title,x_label,y_label,filename):\n",
+    "    # Calculate the point density\n",
+    "    xy = np.vstack([x,y])\n",
+    "    z = gaussian_kde(xy)(xy)\n",
+    "\n",
+    "    fig, ax = plt.subplots()\n",
+    "    scatter = ax.scatter(x, y, c=z, s=10, cmap='gist_rainbow_r')  # Reverse the colormap\n",
+    "    ax.plot([min(x), max(x)], [min(y), max(y)], 'r-')\n",
+    "    plt.xlabel(x_label)\n",
+    "    plt.ylabel(y_label)\n",
+    "    plt.title(title)\n",
+    "    plt.grid(True)\n",
+    "\n",
+    "    # Add a colorbar\n",
+    "    cbar = plt.colorbar(scatter)\n",
+    "    cbar.set_label('Density')\n",
+    "\n",
+    "    # Calculate and print the R-squared value\n",
+    "    r_squared = r2_score(y, x)\n",
+    "    plt.text(0.05, 0.95, f'R² = {r_squared:.2f}', transform=ax.transAxes)\n",
+    "\n",
+    "    # Save figure\n",
+    "    plt.savefig(filename)\n",
+    "\n",
+    "    plt.show()\n",
+    "\n",
+    "parity_plot(x = preds,\n",
+    "            y= y_test[:,0],\n",
+    "            title='Parity Plot',\n",
+    "            x_label = 'XGB',\n",
+    "            y_label = 'GCMCS',\n",
+    "            filename = 'XGbostSero')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df = pd.DataFrame(x.detach().numpy())\n",
+    "\n",
+    "# Rename the last five columns\n",
+    "df.rename(columns={64: 'Vf', 65: 'sa_tot_m2g', 66: 'sa_tot_m2cm3', 67: 'pld', 68: 'lcd'}, inplace=True)\n",
+    "x= df\n",
+    "# Create a dictionary with old column names as keys and new names as values\n",
+    "new_names = {i: f'crystal_feature_{i+1}' for i in range(64)}\n",
+    "\n",
+    "# Rename the columns\n",
+    "x.rename(columns=new_names, inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "explainer = shap.Explainer(model)\n",
+    "shap_values = explainer(x)\n",
+    "np.shape(shap_values.values)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# waterfall plot for first observation\n",
+    "shap.plots.waterfall(shap_values[99],max_display=6)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Force plots\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# force plot\n",
+    "shap.initjs()\n",
+    "shap.plots.force(shap_values[99])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# stacked force plot\n",
+    "shap.plots.force(shap_values[0:100])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# mean SHAP\n",
+    "shap.plots.bar(shap_values,max_display=6)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

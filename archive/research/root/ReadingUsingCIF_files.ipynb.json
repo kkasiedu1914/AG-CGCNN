@@ -1,0 +1,258 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Crystallographic Information File (CIF) is a standard text file format for representing crystallographic information.\n",
+    "These files contain information essential to understanding crystal structures and structural chemistry. In Python, CIF files can be parsed using the gemmi library, which is a modern and efficient library for structural crystallography."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "from google.colab import drive\n",
+    "\n",
+    "from sklearn import preprocessing\n",
+    "import sys, os\n",
+    "import datetime\n",
+    "import pickle\n",
+    "\n",
+    "import pdb # works with breakpoint()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "%pip install pymatgen -q > /dev/null 2>&1  # Suppress installation informational messages\n",
+    "#%pip install pymatgen-db -q > /dev/null 2>&1  # Suppress installation informational messages"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "drive.mount('/content/drive', force_remount=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def convertFileToList(thisFile):\n",
+    "  # opening the file in read mode\n",
+    "  myFile = open(thisFile, \"r\")\n",
+    "  # reading the file\n",
+    "  data = myFile.read()\n",
+    "  # replacing end splitting the text\n",
+    "  # when newline ('\\n') is seen.\n",
+    "  dataIntoList = data.split(\"\\n\")\n",
+    "  # Remove empty strings\n",
+    "  while(\"\" in dataIntoList):\n",
+    "    dataIntoList.remove(\"\")\n",
+    "  print(dataIntoList)\n",
+    "  myFile.close()\n",
+    "  return dataIntoList\n",
+    "\n",
+    "def make_results_dir(pathToWD):\n",
+    "    # Start in main directory\n",
+    "    os.chdir(pathToWD)\n",
+    "    current_time = datetime.datetime.now()\n",
+    "    num_run_dir = 'Results_'  + str(current_time.month) + str(current_time.day) + str('_') + str(current_time.hour) + str(current_time.minute) + str(current_time.second) # Create directory with timedate\n",
+    "    pathToResults = num_run_dir\n",
+    "    try:\n",
+    "        os.mkdir(pathToResults)\n",
+    "    except OSError:\n",
+    "        print (\"Creation of the directory %s failed\" % pathToResults)\n",
+    "    else:\n",
+    "        print (\"Successfully created the directory %s \" % pathToResults)\n",
+    "    os.chdir(num_run_dir) # Switch to the results directory\n",
+    "    print('Path to Results =', pathToResults)\n",
+    "    return  pathToResults"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Print out results to the file 'MyResults.txt' -- no really needed, not used"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Put in appropriate Paths\n",
+    "pathToWorkingDirectory = '/content/drive/MyDrive/work_cgcnn/'\n",
+    "\n",
+    "# Print out results to the file 'MyResults.txt'\n",
+    "doPrint = True\n",
+    "if doPrint:\n",
+    "    pathToResults = make_results_dir(pathToWorkingDirectory)\n",
+    "    fRslts = open('MyResults.txt', 'w') # Open results file for writing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/work_cgcnn/' + pathToResults)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "%pwd"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "### This will print out all of the tags (fields) in the file, along with their corresponding values. The tag names are based on the CIF dictionary that was used to create the file, so they can vary quite a bit from file to file."
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "from pymatgen.core.structure import Structure\n",
+    "\n",
+    "# Load the structure from a CIF file\n",
+    "structure = Structure.from_file('/content/drive/MyDrive/work_cgcnn/hMOF-165.cif')\n",
+    "\n",
+    "# Print the formula of the structure\n",
+    "print('Formula:', structure.formula)\n",
+    "\n",
+    "# Print the space group\n",
+    "print('Space group:', structure.get_space_group_info())\n",
+    "\n",
+    "# Print the unit cell parameters\n",
+    "print('Lattice parameters:')\n",
+    "print('  a =', structure.lattice.a)\n",
+    "print('  b =', structure.lattice.b)\n",
+    "print('  c =', structure.lattice.c)\n",
+    "print('  alpha =', structure.lattice.alpha)\n",
+    "print('  beta =', structure.lattice.beta)\n",
+    "print('  gamma =', structure.lattice.gamma)\n",
+    "\n",
+    "# Print all atom positions\n",
+    "print('Atom positions:')\n",
+    "for site in structure.sites:\n",
+    "    print('  Atom:', site.species)\n",
+    "    print('  Position:', site.frac_coords)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "structure.get_sorted_structure"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "structure.lattice"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "structure.lattice.abc"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "structure[0]"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "structure"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "structure.sites"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "#structure.   -- when you use your cursor and hover over it, you see other commands"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "### Close File"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "if doPrint:\n",
+    "    fRslts.close()"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

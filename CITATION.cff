@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "Please cite the AG-CGCNN paper and the foundational CGCNN paper when using this code."
+title: "AG-CGCNN: Mechanistically informed structure-property modeling of MOFs"
+type: software
+version: 1.0.0
+authors:
+  - family-names: Asiedu
+    given-names: Kwabena Koranteng
+license: MIT
+repository-code: "https://github.com/kkasiedu1914/AG-CGCNN"
+preferred-citation:
+  type: article
+  title: "Incorporating Mechanistic Insights into Structure-Property Modeling of Metal-Organic Frameworks for H2 and CH4 Adsorption: A CGCNN Approach"
+  authors:
+    - family-names: Asiedu
+      given-names: Kwabena Koranteng
+    - family-names: Achenie
+      given-names: Luke E. K.
+    - family-names: Asamoah
+      given-names: Tracy
+    - family-names: Arthur
+      given-names: Emmanuel Kwesi
+    - family-names: Asiedu
+      given-names: Nana Yaw
+  journal: Industrial & Engineering Chemistry Research
+  year: 2025
+  volume: 64
+  issue: 7
+  start: 3764
+  end: 3784
+  doi: 10.1021/acs.iecr.4c03301

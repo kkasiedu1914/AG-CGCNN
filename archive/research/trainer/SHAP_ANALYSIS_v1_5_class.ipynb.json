@@ -1,0 +1,674 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cd /content/drive/MyDrive/work_cgcnn/cgcnn_Trainer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install pymatgen shap > /dev/null 2>&1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip show torch | grep Version"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "import torch\n",
+    "import numpy as np\n",
+    "import torch.nn as nn\n",
+    "import pandas as pd\n",
+    "from ast import literal_eval\n",
+    "import os\n",
+    "import keras\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import shap"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!apt-get install vtk6\n",
+    "!apt-get install python-vtk\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install mayavi"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load model Directly\n",
+    "from cgcnn.model import CrystalGraphConvNet_1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Predict with a trained model\n",
+    "!python predict.py h2_100bar_30kTrainedmodel_best.pth.tar data hMof_cifs --task classification --Additional_feat_num 5 --Class_num 4 --id_prop id_prop_h2_multiclass_all  --useable_samples 10000,10800 --predict_file_name 800_highPMulticlass_trainset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initialize model for surogatoin using the consistent hyper-parameters used\n",
+    "model = CrystalGraphConvNet_1(orig_atom_fea_len = 92, nbr_fea_len= 41,\n",
+    "                                atom_fea_len=64,\n",
+    "                                added_fea_len=5,\n",
+    "                                classnum = 4,\n",
+    "                                n_conv=3,\n",
+    "                                h_fea_len=128,\n",
+    "                                n_h=1,\n",
+    "                                classification=True)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load the parent model state dictionary\n",
+    "model_state_dict = torch.load('h2_100bar_30kTrainedmodel_best.pth.tar')\n",
+    "\n",
+    "# Apply the state dictionary to your model\n",
+    "model.load_state_dict(model_state_dict['state_dict'])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import csv\n",
+    "\n",
+    "def filter_rows(input_csv, output_csv, num_samples, start_from=0,predicted_label_index=0):\n",
+    "    \"\"\"\n",
+    "    Extracts rows from a CSV file where the second column (predicted label) is 0.\n",
+    "\n",
+    "    :param input_csv: Path to the input CSV file.\n",
+    "    :param output_csv: Path to the output CSV file.\n",
+    "    :param num_samples: Number of samples to extract.\n",
+    "    :param start_from: Row index to start processing from (0-indexed).\n",
+    "    :return: Index of the last row processed.\n",
+    "    \"\"\"\n",
+    "    extracted_rows = []\n",
+    "    last_row_processed = start_from\n",
+    "\n",
+    "    with open(input_csv, 'r', newline='') as file:\n",
+    "        reader = csv.reader(file)\n",
+    "        for i, row in enumerate(reader):\n",
+    "            if i < start_from:\n",
+    "                continue  # Skip rows before the starting point\n",
+    "            if int(row[1]) == int(row[2]) == predicted_label_index:\n",
+    "                extracted_rows.append(row)\n",
+    "                if len(extracted_rows) >= num_samples:\n",
+    "                    last_row_processed = i\n",
+    "                    break  # Stop after collecting enough samples\n",
+    "\n",
+    "    with open(output_csv, 'w', newline='') as file:\n",
+    "        writer = csv.writer(file)\n",
+    "        writer.writerows(extracted_rows)\n",
+    "\n",
+    "    return last_row_processed\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "last_processed_row = filter_rows('800_highPMulticlass_trainset_20240607_143353.csv', 'test.csv',80,predicted_label_index=0,start_from=0)\n",
+    "print(last_processed_row)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import zipfile\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "from pymatgen.analysis.graphs import StructureGraph\n",
+    "from pymatgen.analysis.local_env import CrystalNN\n",
+    "from pymatgen.vis.structure_vtk import StructureVis\n",
+    "\n",
+    "def process_cif_files(zip_path, target_file_name):\n",
+    "    \"\"\"\n",
+    "    Process cif files from a zipped file.\n",
+    "\n",
+    "    Args:\n",
+    "        zip_path (str): Path to the zipped file containing cif files.\n",
+    "        target_file_name (str): Name of the target cif file to identify.\n",
+    "\n",
+    "    Returns:\n",
+    "        dict: A dictionary containing the topology and other crystal properties.\n",
+    "            - 'topology': The topology of the MOF.\n",
+    "            - 'formula': Chemical formula of the MOF.\n",
+    "            - 'space_group': Space group information.\n",
+    "            - 'density': Density of the MOF.\n",
+    "    \"\"\"\n",
+    "    with zipfile.ZipFile(zip_path, 'r') as zip_ref:\n",
+    "        # Extract the target cif file if it exists\n",
+    "        if target_file_name in zip_ref.namelist():\n",
+    "            zip_ref.extract(target_file_name)\n",
+    "\n",
+    "            # Parse the cif file\n",
+    "            parser = CifParser(target_file_name)\n",
+    "            structure = parser.get_structures()[0]\n",
+    "\n",
+    "            # Visualize the structure\n",
+    "            vis = StructureVis()\n",
+    "            vis.set_structure(structure)\n",
+    "            vis.show()\n",
+    "\n",
+    "            # Analyze the topology\n",
+    "            sg = StructureGraph.with_local_env_strategy(structure, CrystalNN())\n",
+    "            topology = sg.get_all_bonded_atoms()\n",
+    "\n",
+    "            # Return the topology and other crystal properties\n",
+    "            return {\n",
+    "                'topology': topology,\n",
+    "                'formula': structure.formula,\n",
+    "                'space_group': structure.get_space_group_info(),\n",
+    "                'density': structure.density\n",
+    "            }\n",
+    "        else:\n",
+    "            return \"Target cif file not found in the zip.\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "result = process_cif_files('data/hMof_cifs.zip', 'hMOF-5007831.cif')\n",
+    "print(result)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#load up some pytorch equivalent data if needed\n",
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('test.csv',header=None)\n",
+    "\n",
+    "y = [torch.tensor(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [torch.tensor(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "df.drop(df.columns[[1, 2]], axis=1, inplace=True)\n",
+    "\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,3):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a PyTorch tensor\n",
+    "y_prob = [torch.tensor(row) for row in df.iloc[:,1]]\n",
+    "x = [torch.tensor(row,requires_grad=True) for row in df.iloc[:,2]]\n",
+    "\n",
+    "\n",
+    "# Create a 2D tensor from the list of tensors\n",
+    "y = torch.stack(y)\n",
+    "y_hat = torch.stack(y_hat)\n",
+    "y_prob = torch.stack(y_prob)\n",
+    "x = torch.stack(x)\n",
+    "\n",
+    "# Print the resulting 2D tensor\n",
+    "#print(type(x))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "# Define the original PyTorch model class\n",
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "        self.conv_to_fc_softplus = nn.Softplus()\n",
+    "        self.conv_to_fc = nn.Linear(input_size, hidden_size)\n",
+    "        self.fc_out = nn.Linear(hidden_size, output_size)\n",
+    "        self.softmax = nn.Softmax(dim=1)  # Add softmax here\n",
+    "\n",
+    "    def forward(self, crys_fea):\n",
+    "        crys_fea = self.conv_to_fc(self.conv_to_fc_softplus(crys_fea))\n",
+    "        crys_fea = self.conv_to_fc_softplus(crys_fea)\n",
+    "        out = self.fc_out(crys_fea)\n",
+    "        out = self.softmax(out)  # Applying softmax to the output like original cgcnn\n",
+    "        return out\n",
+    "\n",
+    "# Create an instance of the original PyTorch model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 4\n",
+    "original_model = surogateModel(input_size, hidden_size, output_size)\n",
+    "\n",
+    "# Assign the weights from the original model to the surogate model\n",
+    "original_model.conv_to_fc.weight = model.conv_to_fc.weight\n",
+    "original_model.conv_to_fc.bias = model.conv_to_fc.bias\n",
+    "original_model.fc_out.weight = model.fc_out.weight\n",
+    "original_model.fc_out.bias = model.fc_out.bias\n",
+    "\n",
+    "# Define the equivalent PyTorch sequential model using the nn.Sequential API\n",
+    "# Use the same architecture, activation function, weights and biases as the original model\n",
+    "sequential_model = nn.Sequential(\n",
+    "    nn.Flatten(),\n",
+    "    nn.Softplus(),\n",
+    "    nn.Linear(input_size, hidden_size, bias=True),\n",
+    "    nn.Softplus(),\n",
+    "    nn.Linear(hidden_size, output_size, bias=True),\n",
+    "    nn.Softmax(dim=1)  # Add softmax here too\n",
+    ")\n",
+    "# Copy the weights and biases from the original model to the sequential model\n",
+    "sequential_model[2].weight.data = original_model.conv_to_fc.weight.data\n",
+    "sequential_model[2].bias.data = original_model.conv_to_fc.bias.data\n",
+    "sequential_model[4].weight.data = original_model.fc_out.weight.data\n",
+    "sequential_model[4].bias.data = original_model.fc_out.bias.data\n",
+    "\n",
+    "# Test the sequential model on some sample input\n",
+    "# You can change the sample input as needed\n",
+    "#sample_input = x # 10 samples with 69 features each\n",
+    "#sequential_output = sequential_model(sample_input)\n",
+    "#print(\"Sequential output:\", sequential_output)\n",
+    "\n",
+    "# Test the original model on the same sample input\n",
+    "#original_output = original_model(sample_input)\n",
+    "#print(\"Original output:\", original_output)\n",
+    "\n",
+    "# Compare the outputs of the two models\n",
+    "# They should be very close if not identical\n",
+    "#print(\"Difference:\", torch.abs(sequential_output - original_output))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load up some numpy data\n",
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('test.csv',header=None)\n",
+    "\n",
+    "y = [np.array(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [np.array(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "df.drop(df.columns[[1, 2]], axis=1, inplace=True)\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,3):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a numpy array\n",
+    "y_prob = [np.array(row) for row in df.iloc[:,1]]\n",
+    "x = [np.array(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "# Stack the list of numpy arrays to create a 2D array\n",
+    "y = np.stack(y)\n",
+    "y_prob = np.stack(y_prob)\n",
+    "#y = y[:,1:] # Use one isoterm\n",
+    "y_hat = np.stack(y_hat)\n",
+    "x = np.stack(x)\n",
+    "\n",
+    "# Print the resulting 2D array\n",
+    "#print(x)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create an instance of the PyTorch model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 4\n",
+    "pytorch_model = original_model\n",
+    "\n",
+    "# Define a function to convert PyTorch tensors to NumPy arrays\n",
+    "def to_numpy(tensor):\n",
+    "    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()\n",
+    "\n",
+    "# Get the weights and biases of the PyTorch model as NumPy arrays\n",
+    "w1 = to_numpy(pytorch_model.conv_to_fc.weight)\n",
+    "b1 = to_numpy(pytorch_model.conv_to_fc.bias)\n",
+    "w2 = to_numpy(pytorch_model.fc_out.weight)\n",
+    "b2 = to_numpy(pytorch_model.fc_out.bias)\n",
+    "\n",
+    "\n",
+    "# Define the Keras model using the Sequential API\n",
+    "keras_model = keras.models.Sequential([\n",
+    "    keras.layers.Activation(\"softplus\", input_shape=(input_size,)),\n",
+    "    keras.layers.Dense(hidden_size, activation=\"softplus\", weights=[w1.T, b1]),\n",
+    "    keras.layers.Dense(output_size, activation=\"linear\", weights=[w2.T, b2]),\n",
+    "    keras.layers.Activation('softmax')\n",
+    "])\n",
+    "# # Test the Keras model on some sample input\n",
+    "# # You can change the sample input as needed\n",
+    "sample_input = x # 10 samples with 69 features each\n",
+    "keras_output = keras_model.predict(sample_input)\n",
+    "#print(\"Keras output:\", keras_output[0:10])\n",
+    "\n",
+    "# Convert the sample input to a PyTorch tensor\n",
+    " #sample_input = torch.from_numpy(sample_input).float()\n",
+    " #pytorch_output = pytorch_model(sample_input)\n",
+    " #print(\"PyTorch output:\", normalizer.denorm(pytorch_output))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## **MODEL SHAP ANALYSIS**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Label data features\n",
+    "# save the array as a pandas dataframe with the names that you specified\n",
+    "def featlabeler(x):\n",
+    "  columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "  if x.ndim == 1:\n",
+    "    x = np.reshape(x, (1, 69))\n",
+    "  x = pd.DataFrame(x, columns=columns)\n",
+    "  return x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x = featlabeler(x)\n",
+    "x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Use KernelExplainer to explain the Keras model predictions\n",
+    "explainer = shap.KernelExplainer(keras_model.predict, x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "shap_values = explainer(x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "class_ = 0"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Assuming shap_values is a matrix with shape (num_samples, num_features)\n",
+    "num_features = shap_values.shape[1]\n",
+    "\n",
+    "# Create the custom order array\n",
+    "desired_indices = [64, 65, 66,67,68]  # The indices of the SHAP values you want first\n",
+    "remaining_indices = list(set(range(num_features)) - set(desired_indices))\n",
+    "custom_order = desired_indices + remaining_indices\n",
+    "\n",
+    "shap.plots.bar(shap_values[:,:,class_], max_display=6 ,show=False) # Set to False to modify\n",
+    "# Set custom title if needed\n",
+    "\n",
+    "ax = plt.gca()\n",
+    "#ax.set_title(\"SHAP\")\n",
+    "\n",
+    "# Iterate over the bar containers and set the color to blue\n",
+    "for bar_container in ax.containers:\n",
+    "    plt.setp(bar_container, color='blue')\n",
+    "\n",
+    "# Iterate over the text objects and set the color to blue\n",
+    "for text in ax.texts:\n",
+    "    text.set_color('blue')\n",
+    "\n",
+    "\n",
+    "# Show the plot with the title\n",
+    "plt.show()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "shap.plots.beeswarm(shap_values[:,:,0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Open the file in read binary mode\n",
+    "import pickle\n",
+    "\n",
+    "with open(\"shap_values_100bar_80randtrainset_0cls_general_shap_plots.pkl\", \"rb\") as f:\n",
+    "    # Load the SHAP values from the file\n",
+    "    shap_values = pickle.load(f)\n",
+    "#with open(\"shap_values_hclass2bar_80samp_0cls.pkl\", \"rb\") as f:\n",
+    "    # Load the SHAP values from the file\n",
+    " #   explainer = pickle.load(f)\n",
+    "#with open(\"shap_values_hclass2bar_89samp_0cls.pkl\", \"rb\") as f:\n",
+    "    # Load the SHAP values from the file\n",
+    "#    explainer = pickle.load(f)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save explainer object\n",
+    "import pickle\n",
+    "\n",
+    "# Save the SHAP values as a pickle file\n",
+    "with open(\"shap_values_100bar_80randtrainset_3cls_general_shap_plots.pkl\", \"wb\") as f:\n",
+    "    pickle.dump(shap_values, f)\n",
+    "\n",
+    "# Save the explainer object as a pickle file\n",
+    "#with open(\"explainerobj_hclass2bar_80samp_0cls.pkl\", \"wb\") as f:\n",
+    "#    pickle.dump(explainer, f)\n",
+    "\n",
+    "# You can also save other objects that the explainer creates, such as the expected value\n",
+    "#with open(\"explain_expect_hclass2bar_80samp_0cls.pkl\", \"wb\") as f:\n",
+    "#    pickle.dump(explainer.expected_value, f)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save the SHAP values as a pickle file\n",
+    "import pickle\n",
+    "with open(\"shapvals_hclass2bar_80samp_0cls.pkl\", \"wb\") as f:\n",
+    "    pickle.dump(shap_values, f)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "order = np.argsort(keras_output[:,0])\n",
+    "shap.plots.heatmap(shap_values[:,:,0],instance_order=order)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Plot the mean shap values for each feature\n",
+    "shap.summary_plot(shap_values[:,:,0:1], x, plot_type=\"bar\",)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# **Deep SHAP Analysis**\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create an explainer object\n",
+    "sequential_model\n",
+    "explainer = shap.DeepExplainer(sequential_model, x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Get SHAP values\n",
+    "shap_values_deep = explainer.shap_values(x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "shap_values.values = shap_values_deep"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "shap_values.values"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# waterfall plot for first observation\n",
+    "shap.plots.waterfall(shap_values[99],max_display=6)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# mean SHAP\n",
+    "shap.plots.bar(shap_values,max_display=6)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

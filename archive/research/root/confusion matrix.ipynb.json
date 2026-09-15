@@ -1,0 +1,38 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# prompt: write a script that computes a confusion matrix for 4 classes, the input file is a csv file. the file has 3 column the id of sample, the true label and the predicted label\n",
+    "\n",
+    "import pandas as pd\n",
+    "from sklearn.metrics import confusion_matrix\n",
+    "\n",
+    "# Read the CSV file\n",
+    "df = pd.read_csv('H2class_100bar_30ktrain_test_logs_20231110_172115.csv')\n",
+    "\n",
+    "# Extract the true and predicted labels\n",
+    "true_labels = df.iloc[:,1]\n",
+    "predicted_labels = df[:,2]\n",
+    "\n",
+    "# Compute the confusion matrix\n",
+    "confusion_matrix = confusion_matrix(true_labels, predicted_labels)\n",
+    "\n",
+    "# Print the confusion matrix\n",
+    "print(confusion_matrix)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

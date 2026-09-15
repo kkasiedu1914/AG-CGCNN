@@ -1,0 +1,223 @@
+import argparse
+import sys
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from cgcnn.model import CrystalGraphConvNet
+from cgcnn.data import collate_pool, Crystals
+from cgcnn.data import CustomTransform
+from tensorboardX import SummaryWriter
+
+parser = argparse.ArgumentParser(description='Crystal Graph Convolutional Neural Networks')
+parser.add_argument('data', metavar='DIR', help='path to dataset')
+parser.add_argument('--id_prop', metavar='FILE', help='path to id_prop.csv file')
+parser.add_argument('--task', type=str, default='classification', metavar='TASK',
+                    choices=['classification', 'regression'], help='task type (default: classification)')
+parser.add_argument('--epochs', default=300, type=int, metavar='N', help='number of total epochs to run')
+parser.add_argument('-b', '--batch-size', default=64, type=int, metavar='N', help='mini-batch size (default: 64)')
+parser.add_argument('--lr', '--learning-rate', default=0.001, type=float, metavar='LR', help='initial learning rate')
+parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
+parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
+parser.add_argument('--print-freq', '-p', default=10, type=int, metavar='N', help='print frequency (default: 10)')
+parser.add_argument('--resume', default='', type=str, metavar='PATH', help='path to latest checkpoint (default: none)')
+parser.add_argument('--test-only', action='store_true', help='test only flag')
+parser.add_argument('--test-ratio', type=float, default=0.2, metavar='N', help='test ratio (default: 0.2)')
+parser.add_argument('--val-ratio', type=float, default=0.2, metavar='N', help='validation ratio (default: 0.2)')
+parser.add_argument('--train-ratio', type=float, default=0.6, metavar='N', help='train ratio (default: 0.6)')
+parser.add_argument('--optim', type=str, default='Adam', metavar='OPTIM', choices=['SGD', 'Adam'],
+                    help='optimizer type (default: Adam)')
+parser.add_argument('--n-conv', type=int, default=3, metavar='N', help='number of convolutional layers (default: 3)')
+parser.add_argument('--n-h', type=int, default=1, metavar='N', help='number of hidden layers (default: 1)')
+parser.add_argument('--clip', type=float, default=3, metavar='N', help='gradient clipping (default: 3)')
+parser.add_argument('--disable-cuda', action='store_true', help='disable CUDA')
+parser.add_argument('--log-interval', type=int, default=50, metavar='N', help='interval between training status logs (default: 50)')
+
+args = parser.parse_args(sys.argv[1:])
+
+args.cuda = not args.disable_cuda and torch.cuda.is_available()
+
+# Read in id_prop.csv file
+id_prop = pd.read_csv('id_prop.csv')
+
+# Extract material IDs and feature vectors from id_prop.csv
+ids = id_prop['Material_ID'].values
+features = id_prop.iloc[:, 1:].values
+
+# Convert material IDs and feature vectors to numpy arrays
+ids = np.array(ids)
+features = np.array(features)
+
+# Normalize feature vectors
+features = (features - features.mean(axis=0)) / features.std(axis=0)
+
+# Create dictionary that maps material IDs to corresponding feature vectors
+feature_dict = dict(zip(ids, features))
+
+# Create instance of CustomTransform
+custom_transform = CustomTransform()
+
+# Define custom dataset class that uses both CIF data and feature vectors
+class MulticlassCrystals(torch.utils.data.Dataset):
+    def __init__(self, data_dir, id_prop, transform=False):
+        self.crystals = Crystals(data_dir, transform=transform)
+        self.id_prop = pd.read_csv(id_prop)
+        self.labels = self.id_prop['target'].values
+
+    def __len__(self):
+        return len(self.crystals)
+
+    def __getitem__(self, idx):
+        crystal = self.crystals[idx]
+        material_id = crystal.id
+        label = self.labels[self.id_prop['Material_ID'] == material_id]
+        return crystal, label
+
+# Load datasets
+train_set = MulticlassCrystals(args.data, args.id_prop, transform=True)
+val_set = MulticlassCrystals(args.data, args.id_prop, transform=False)
+test_set = MulticlassCrystals(args.data, args.id_prop, transform=False)
+
+# Define data loaders
+train_loader = torch.utils.data.DataLoader(
+    train_set, batch_size=args.batch_size, shuffle=True,
+    collate_fn=collate_pool, num_workers=args.prefetch)
+val_loader = torch.utils.data.DataLoader(
+    val_set, batch_size=args.batch_size, shuffle=False,
+    collate_fn=collate_pool, num_workers=args.prefetch)
+test_loader = torch.utils.data.DataLoader(
+    test_set, batch_size=args.batch_size, shuffle=False,
+    collate_fn=collate_pool, num_workers=args.prefetch)
+
+# Split data into train, validation, and test sets
+ids = np.arange(len(feature_dict))
+np.random.shuffle(ids)
+split_1 = int(args.train_ratio * len(ids))
+split_2 = int((args.train_ratio + args.val_ratio) * len(ids))
+train_ids = ids[:split_1]
+val_ids = ids[split_1:split_2]
+test_ids = ids[split_2:]
+
+# Create dataloaders for each set
+train_set = MulticlassCrystals(args.data, transform=True)
+train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_ids)
+train_loader = DataLoader(train_set, batch_size=args.batch_size, sampler=train_sampler, collate_fn=collate_pool, num_workers=4)
+
+val_set = MulticlassCrystals(args.data, transform=False)
+val_sampler = torch.utils.data.sampler.SubsetRandomSampler(val_ids)
+val_loader = DataLoader(val_set, batch_size=args.batch_size, sampler=val_sampler, collate_fn=collate_pool, num_workers=4)
+
+test_set = MulticlassCrystals(args.data, transform=False)
+test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_ids)
+test_loader = DataLoader(test_set, batch_size=args.batch_size, sampler=test_sampler, collate_fn=collate_pool, num_workers=4)
+
+# Create model and optimizer
+model = CrystalGraphConvNet(n_conv=args.n_conv, n_h=args.n_h, n_output=len(np.unique(features)))
+
+if args.optim == 'SGD':
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+else:
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+
+scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10)
+
+# Move model to GPU if necessary
+if not args.disable_cuda and torch.cuda.is_available():
+    model.cuda()
+
+# Train and evaluate model
+if not args.test_only:
+    # Initialize summary writer
+    writer = SummaryWriter(log_dir='./logs')
+
+    # Initialize best validation loss and accuracy
+    best_val_loss = float('inf')
+    best_val_acc = 0.0
+
+# Train model
+for epoch in range(args.epochs):
+    model.train()
+    for i, (x, y) in enumerate(train_loader):
+        if not args.disable_cuda and torch.cuda.is_available():
+            x = x.cuda()
+            y = y.cuda()
+
+        optimizer.zero_grad()
+        output = model(x)
+        loss = F.mse_loss(output, y)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
+        optimizer.step()
+
+        if i % args.log_interval == 0:
+            print(f'Epoch: {epoch+1}/{args.epochs}, Batch: {i+1}/{len(train_loader)}, Loss: {loss.item()}')
+            writer.add_scalar('loss/train', loss.item(), epoch*len(train_loader)+i)
+
+    # Evaluate model on validation set
+    model.eval()
+    val_loss = 0.0
+    val_acc = 0.0
+    with torch.no_grad():
+        for i, (x, y) in enumerate(val_loader):
+            if not args.disable_cuda and torch.cuda.is_available():
+                x = x.cuda()
+                y = y.cuda()
+
+            output = model(x)
+            loss = F.mse_loss(output, y)
+            val_loss += loss.item()
+            val_acc += torch.eq(torch.argmax(output, dim=1), torch.argmax(y, dim=1)).type(torch.float).mean()
+
+    val_loss /= len(val_loader)
+    val_acc /= len(val_loader)
+    print(f'Validation Loss: {val_loss}, Validation Accuracy: {val_acc}')
+    writer.add_scalar('loss/val', val_loss, epoch+1)
+    writer.add_scalar('accuracy/val', val_acc, epoch+1)
+    scheduler.step(val_loss)
+
+    # Save best model
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        torch.save(model.state_dict(), 'best_model.pt')
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        torch.save(model.state_dict(), 'best_acc_model.pt')
+
+# Test model on test set
+model.load_state_dict(torch.load('best_model.pt'))
+model.eval()
+test_loss = 0.0
+test_acc = 0.0
+confusion_matrix = torch.zeros(len(np.unique(features)), len(np.unique(features)), dtype=torch.long)
+with torch.no_grad():
+    for i, (x, y) in enumerate(test_loader):
+        if not args.disable_cuda and torch.cuda.is_available():
+            x = x.cuda()
+            y = y.cuda()
+
+        output = model(x)
+        loss = F.mse_loss(output, y)
+        test_loss += loss.item()
+        test_acc += torch.eq(torch.argmax(output, dim=1), torch.argmax(y, dim=1)).type(torch.float).mean()
+        for i, j in zip(torch.argmax(output, dim=1), torch.argmax(y, dim=1)):
+            confusion_matrix[i][j] += 1
+
+test_loss /= len(test_loader)
+test_acc /= len(test_loader)
+print(f'Test Loss: {test_loss}, Test Accuracy: {test_acc}')
+print(confusion_matrix)
+precision = confusion_matrix.diag() / confusion_matrix.sum(dim=1)
+recall = confusion_matrix.diag() / confusion_matrix.sum(dim=0)
+f1_score = 2 * (precision * recall) / (precision + recall)
+print(f'Precision: {precision}, Recall: {recall}, F1 Score: {f1_score}')
+
+# Write results to file
+results = pd.DataFrame({'loss': [test_loss], 'accuracy': [test_acc], 'precision': [precision], 'recall': [recall], 'f1_score': [f1_score]})
+results.to_csv('test_results.csv', index=False)
+
+# Close summary writer
+writer.close()

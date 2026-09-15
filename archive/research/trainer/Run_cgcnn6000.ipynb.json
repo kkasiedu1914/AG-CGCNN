@@ -1,0 +1,95 @@
+{
+ "nbformat": 4,
+ "nbformat_minor": 0,
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Install and import some default libraries\n",
+    "!pip install pymatgen > /dev/null 2>&1  # Suppress installation informational messages\n",
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "import os"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/Trainer_H2_100bar_6000/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Run CGCNN from python script (at least 30 minutes)\n",
+    "\n",
+    "!python main.py /content/drive/MyDrive/MatSci2_Group/Multiclass_cgcnn/data/hMof_Database --task classification --epochs 100 --train-ratio 0.8 --val-ratio 0.1 --test-ratio 0.1 --Additional_feat_num 5 --Class_num 4"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Run CGCNN from python script extracting data from a zipped file\n",
+    "# This will take longer time (at least an hour) depending on your training\n",
+    "\n",
+    "!python mainz.py data hMof_cifs --task classification --epochs 100 --train-ratio 0.8 --val-ratio 0.1 --test-ratio 0.1 --Additional_feat_num 3 --Class_num 4"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Resume From checkpoints\n",
+    "!python mainz.py /content/drive/MyDrive/MatSci2_Group/Multiclass_cgcnn/data hMof_cifs --task classification --epochs 100 --train-ratio 0.8 --val-ratio 0.1 --test-ratio 0.1 --Additional_feat_num 5 --Class_num 4 --resume /content/drive/MyDrive/MatSci2_Group/Multiclass_cgcnn/checkpoint.pth.tar\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ]
+}

@@ -1,0 +1,362 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Change the present working directory to where the cgcnn-master folder is on your google drive\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cd /content/drive/MyDrive/cgcnn-master"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# KK's Directory: cd /content/drive/MyDrive/work_cgcnn/cgcnn-master\n",
+    "# Tracy's Directory: /content/drive/MyDrive/cgcnn-master"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Import packages\n",
+    "\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "from matplotlib import pyplot as plt\n",
+    "import pandas as pd\n",
+    "import csv\n",
+    "from csv import writer\n",
+    "from csv import reader\n",
+    "import random as rn\n",
+    "import shutil\n",
+    "import os\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Install this package.\n",
+    "# You can skip this step if you have the package already installed\n",
+    "\n",
+    "!pip install pymatgen"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Preparing your dataset"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Steps to create customised data sets for training or testing\n",
+    "\n",
+    "1. Create a folder and copy all the cif files to be trained or tested by the model into it.\n",
+    "\n",
+    "2. Copy the atom.json file into the same folder\n",
+    "\n",
+    "3. Create a CSV file designated as id_prop.csv . this CSV file should contain two columns. One column should contain the list of IDs for each of the cif files you copied in step 1. The other should contain the desired target property for each of the IDs ( the file should not include column headers....the target properties can be found in the specific .csv containing all target properties. This file can be found in most databases when downloaded). Save this file into the folder created in step 1.\n",
+    "\n",
+    "4. Upload the folder into the cgcnn data directory.\n",
+    "\n",
+    "5. To train the model using your data, change data\\current directory to the new folder you uploaded. eg\n",
+    "!python main.py data/new folder uploaded\n",
+    "\n",
+    "## Alternative Approach\n",
+    "1. Upload all the cif files into the MOF_Dataset folder. The MOF_Dataset folder folder is located within the data folder\n",
+    "\n",
+    "2. Copy the material ids and target properties from the csv file containing all target properties (This file can be found in most databases when downloaded) into the MOF_id_and_targets.csv file (this file is in the cgcnn folder).\n",
+    "\n",
+    "Note the exact column alphabet and corresponding alphabetical number of where you paste in the MOF_id_and_targets.csv file. Column A, for example, has an alphabetical number of 0, column B is 1, column C is 2, and so on throughout the csv file.\n",
+    "\n",
+    "3. In the dictionary below this block text with a variable name Targetprops, add the newly added column headers(target property eg: density, volume etc...) from the MOF_id_and_targets.csv file as a key and the alphabetical number noted earlier as the corresponding value. Eg\n",
+    "\n",
+    "    Targetprops= {\n",
+    "                  'qmof_PLD':1,\n",
+    "                  'qmof_LCD':2,\n",
+    "                  'qmof_volume':3,\n",
+    "                  'qmof_energy_total':4,\n",
+    "                  'bandgap':5\n",
+    "                  'newTargetproperty':6}\n",
+    "\n",
+    "    ID_columns = {\n",
+    "                  'qmof':0\n",
+    "                  'newColumn_of_IDs':9}\n",
+    "\n",
+    "4. Specify the number of training samples. Eg\n",
+    "dataset = 3000\n",
+    "\n",
+    "5. Specify which material id column and target property you are using.\n",
+    "eg:\n",
+    "mof_ids = ID_columns['newColumn_of_IDs']\n",
+    "target_prop = Targetprops['newTargetproperty']\n",
+    "\n",
+    "\n",
+    "5. Continue running the codes until you reach the actual model training stage\n",
+    "\n",
+    "This method of data preparation reduces the time of preparing a new id_prop.csv file every time a new dataset is to be studied. The same process can be done when preparing a dataset for testing the trained model\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# This block is for preparing your dataset using the Alternative Approach\n",
+    "# Prepare your dataset for training following the instructions in the \"Ulternative Approach\" section\n",
+    "#\n",
+    "\n",
+    "Targetprops= {'qmof_PLD':1,\n",
+    "              'qmof_LCD':2,\n",
+    "              'qmof_volume':3,\n",
+    "              'qmof_energy_total':4,\n",
+    "              'qmof_bandgap':5}\n",
+    "\n",
+    "ID_columns = {'qmof':0}"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Specify the number of training samples\n",
+    "dataset = 3500\n",
+    "\n",
+    "# Specify MOF ID type.Choose from the Targetpops dictionary above this bock of code\n",
+    "mof_ids = ID_columns['qmof']\n",
+    "\n",
+    "# Specify the target property. Choose from the Targetpops dictionary above this bock of code\n",
+    "target_prop = Targetprops['qmof_LCD']\n",
+    "\n",
+    "# This code below pics a random sample from the dataset\n",
+    "id_startrange = rn.randint(0, 10000)\n",
+    "id_endrange = dataset + id_startrange"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# This implements your selected number of training samples and chosen MOF ID type\n",
+    "mofID = pd.read_csv(\"MOF_id_and_targets.csv\", usecols = [mof_ids],index_col =None)\n",
+    "\n",
+    "mofTargetprop = pd.read_csv(\"MOF_id_and_targets.csv\", usecols = [target_prop], index_col = None)\n",
+    "\n",
+    "df = [mofID[id_startrange:id_endrange],mofTargetprop.iloc[id_startrange:id_endrange]]\n",
+    "\n",
+    "result = pd.concat(df,axis=1, join='inner')\n",
+    "print('Prepared id_prop.csv file \\n\\n')\n",
+    "display(result)\n",
+    "\n",
+    "result.to_csv('id_prop.csv',index = False, header = False)\n",
+    "\n",
+    "# Moving the prepared id_prop.csv to the MOF_Dataset folder\n",
+    "\n",
+    "# First count the numer of previous ids in the old_idpops folder\n",
+    "old_ids_path = 'data/MOF_Dataset/old_id_props'\n",
+    "count = 0\n",
+    "\n",
+    "# Iterate directory and count the number of previous files\n",
+    "for path in os.listdir(old_ids_path):\n",
+    "    # check if current path is a file\n",
+    "    if os.path.isfile(os.path.join(old_ids_path, path)):\n",
+    "        count += 1\n",
+    "numfiles = str(count)\n",
+    "\n",
+    "# Rename the previous id_prop.csv file and saves it in the old_id_props folder\n",
+    "\n",
+    "idTags ='id_prop_'\n",
+    "locTags = \"data/MOF_Dataset/\"\n",
+    "old_name = \"data/MOF_Dataset/id_prop.csv\"\n",
+    "new_name = idTags + numfiles + '.csv'\n",
+    "\n",
+    "os.rename(old_name, locTags+new_name)\n",
+    "renamedID = locTags+new_name\n",
+    "\n",
+    "\n",
+    "# Moves the renamed file\n",
+    "renamedID_path = renamedID\n",
+    "renamedIDnewpth = old_ids_path\n",
+    "shutil.move(renamedID_path, renamedIDnewpth)\n",
+    "\n",
+    "# The newly created id_prop file is then moved to the desired set location\n",
+    "shutil.move('id_prop.csv', 'data/MOF_Dataset')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "Use this command to train a CGCNN model after dataset preparation"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!python main.py --train-ratio 0.6 --val-ratio 0.2 --test-ratio 0.2 --optim Adam --n-conv 3 --momentum 0.6 --epochs 40 --n-h 3 data/MOF_Dataset\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Open the test_results file to view the model predictions\n",
+    "test_results = pd.read_csv('test_results.csv',\n",
+    "                           names=[\"Material_ID\", \"DFT_Predictions\", \"Model_Predictions\"])\n",
+    "test_results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Removing the Material_ID column\n",
+    "remove_ids = test_results.columns[0]\n",
+    "test_results = test_results.drop(remove_ids,axis=1)\n",
+    "print(test_results.head(),'\\n')\n",
+    "Tmin = test_results.min(axis=0).min(axis = 0)\n",
+    "Tmax = test_results.max(axis=0).max(axis = 0)\n",
+    "DFT_Predictions = test_results.DFT_Predictions\n",
+    "Model_Predictions = test_results.Model_Predictions\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Visuallizing the CGCNN model performance\n",
+    "\n",
+    "fig = plt.figure()\n",
+    "axis = fig.add_axes([0.1,0.1,1.5,1.5])\n",
+    "\n",
+    "axis.set_xlim(Tmin,Tmax)\n",
+    "axis.set_ylim(Tmin,Tmax)\n",
+    "x1 = np.linspace(*axis.get_xlim()) # generates 45 degree angle\n",
+    "axis.plot(x1, x1)  # add 45-deg line\n",
+    "axis.plot(DFT_Predictions,Model_Predictions,marker ='o',linestyle = 'none', color ='red', markersize = 10)\n",
+    "axis.set_title('Parity Plot',fontsize = 20)\n",
+    "axis.set_xlabel(\"DFT\",fontsize = 20)\n",
+    "axis.set_ylabel(\"Model Predictions\",fontsize = 20)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "## This section is for testing the trained model\n",
+    "Prepare the dataset using the first method or the alternative approach mentined earlier, before running the codes below"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!python predict.py model_best.pth.tar data/MOF_Dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Open the test_results file to view the model predictions\n",
+    "test_results = pd.read_csv('test_results.csv',\n",
+    "                           names=[\"Material_ID\", \"DFT_Predictions\", \"Model_Predictions\"])\n",
+    "test_results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Removing the Material_ID column\n",
+    "remove_ids = test_results.columns[0]\n",
+    "test_results = test_results.drop(remove_ids,axis=1)\n",
+    "print(test_results.head(),'\\n')\n",
+    "Tmin = test_results.min(axis=0).min(axis = 0)\n",
+    "Tmax = test_results.max(axis=0).max(axis = 0)\n",
+    "DFT_Predictions = test_results.DFT_Predictions\n",
+    "Model_Predictions = test_results.Model_Predictions\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Visuallizing the CGCNN model performance\n",
+    "fig = plt.figure()\n",
+    "axis = fig.add_axes([1,1,1.5,1.5])\n",
+    "#plt.plot(model_predict,DFT_predict,)\n",
+    "axis.set_xlim(Tmin,Tmax)\n",
+    "axis.set_ylim(Tmin,Tmax)\n",
+    "x1 = np.linspace(*axis.get_xlim()) # generates 45 degree angle\n",
+    "axis.plot(x1, x1)  # add 45-deg line\n",
+    "axis.plot(DFT_Predictions,Model_Predictions,marker ='o',linestyle = 'none', color ='green', markersize = 10)\n",
+    "axis.set_title('Parity Plot',fontsize = 20)\n",
+    "axis.set_xlabel(\"DFT\",fontsize = 20)\n",
+    "axis.set_ylabel(\"Model Predictions\",fontsize = 20)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

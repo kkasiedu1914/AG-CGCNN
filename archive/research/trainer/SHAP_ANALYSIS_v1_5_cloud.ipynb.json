@@ -1,0 +1,714 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cd /content/drive/MyDrive/work_cgcnn/cgcnn_Trainer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install pymatgen shap > /dev/null 2>&1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "!pip install keras #==2.15.0 #> /dev/null 2>&1\n",
+    "!pip install tensorflow #==2.17.0 #> /dev/null 2>&1"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip show keras | grep Version"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "import torch\n",
+    "import numpy as np\n",
+    "import torch.nn as nn\n",
+    "import pandas as pd\n",
+    "from ast import literal_eval\n",
+    "import os\n",
+    "import keras\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import shap"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load model Directly\n",
+    "from cgcnn.model import CrystalGraphConvNet_1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Predict with a trained model\n",
+    "!python predict.py Meth_onlinehighPcheckpoint.pth.tar data Tobacco_data --predict_file_name tobmultireg500corplot --task regression --Additional_feat_num 5 --Target_num 3 --id_prop Tob_Meth_idprop_cm3STPcorr --useable_samples 1000,1100"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initialize model for surogatoin using the consistent hyper-parameters used\n",
+    "model = CrystalGraphConvNet_1(orig_atom_fea_len = 92, nbr_fea_len= 41,\n",
+    "                                atom_fea_len=64,\n",
+    "                                added_fea_len=5,\n",
+    "                                classnum = 3,\n",
+    "                                n_conv=3,\n",
+    "                                h_fea_len=128,\n",
+    "                                n_h=1,\n",
+    "                                classification=False)\n",
+    "\n",
+    "# Specify Normaliser\n",
+    "class Normalizer(object):\n",
+    "    \"\"\"Normalize a Tensor column by column and restore it later. \"\"\"\n",
+    "\n",
+    "    def __init__(self, tensor):\n",
+    "        \"\"\"tensor is taken as a sample to calculate the mean and std\"\"\"\n",
+    "        self.mean = torch.mean(tensor, dim=0)\n",
+    "        self.std = torch.std(tensor, dim=0)\n",
+    "\n",
+    "    def norm(self, tensor):\n",
+    "        return (tensor - self.mean) / self.std\n",
+    "\n",
+    "    def denorm(self, normed_tensor):\n",
+    "        return normed_tensor * self.std + self.mean\n",
+    "\n",
+    "    def state_dict(self):\n",
+    "        return {'mean': self.mean,\n",
+    "                'std': self.std}\n",
+    "\n",
+    "    def load_state_dict(self, state_dict):\n",
+    "        self.mean = state_dict['mean']\n",
+    "        self.std = state_dict['std']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load the parent model state dictionary\n",
+    "model_state_dict = torch.load('Meth_onlinehighPcheckpoint.pth.tar',map_location=torch.device('cpu'))\n",
+    "\n",
+    "# Apply the state dictionary to your model\n",
+    "model.load_state_dict(model_state_dict['state_dict'])\n",
+    "\n",
+    "# Obtain target normalizer\n",
+    "normalizer = Normalizer(torch.tensor([[0.0,0.0,0.0],[ 0.0,0.0,0.0]]))\n",
+    "model_state_dict['normalizer']['mean'] = model_state_dict['normalizer']['mean'][-3:]\n",
+    "model_state_dict['normalizer']['std'] = model_state_dict['normalizer']['std'][-3:]\n",
+    "normalizer.load_state_dict(model_state_dict['normalizer'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Load the parent model state dictionary\n",
+    "model_state_dict = torch.load('coreMOF_pressureswing_gl_regmodel_best.pth.tar',map_location=torch.device('cpu'))\n",
+    "# Apply the state dictionary to your model\n",
+    "model.load_state_dict(model_state_dict['state_dict'])\n",
+    "model_state_dict['normalizer']['mean'] = model_state_dict['normalizer']['mean'][-1:]\n",
+    "model_state_dict['normalizer']['std'] = model_state_dict['normalizer']['std'][-1:]\n",
+    "print(model_state_dict['normalizer']['mean'])\n",
+    "print(model_state_dict['normalizer']['std'])"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#load up some pytorch equivalent data if needed\n",
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('tobmultireg500corplot_20241129_094823.csv',header=None)\n",
+    "\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,4):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a PyTorch tensor\n",
+    "y = [torch.tensor(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [torch.tensor(row) for row in df.iloc[:,2]]\n",
+    "x = [torch.tensor(row,requires_grad=True) for row in df.iloc[:,3]]\n",
+    "\n",
+    "\n",
+    "# Create a 2D tensor from the list of tensors\n",
+    "y = torch.stack(y)\n",
+    "y_hat = torch.stack(y_hat)\n",
+    "x = torch.stack(x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "# Define the original PyTorch model class\n",
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "\n",
+    "        self.conv_to_fc_softplus = nn.Softplus()\n",
+    "        self.conv_to_fc = nn.Linear(input_size, hidden_size)\n",
+    "        self.fc_out = nn.Linear(hidden_size, output_size)\n",
+    "\n",
+    "    def forward(self, crys_fea):\n",
+    "        crys_fea = self.conv_to_fc(self.conv_to_fc_softplus(crys_fea))\n",
+    "        crys_fea = self.conv_to_fc_softplus(crys_fea)\n",
+    "        out = self.fc_out(crys_fea)\n",
+    "        return out\n",
+    "\n",
+    "# Create an instance of the original PyTorch model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 3\n",
+    "original_model = surogateModel(input_size, hidden_size, output_size)\n",
+    "\n",
+    "# Assign the weights from the original model to the surogate model\n",
+    "original_model.conv_to_fc.weight = model.conv_to_fc.weight\n",
+    "original_model.conv_to_fc.bias = model.conv_to_fc.bias\n",
+    "original_model.fc_out.weight = model.fc_out.weight\n",
+    "original_model.fc_out.bias = model.fc_out.bias\n",
+    "\n",
+    "# Define the equivalent PyTorch sequential model using the nn.Sequential API\n",
+    "# Use the same architecture, activation function, weights and biases as the original model\n",
+    "sequential_model = nn.Sequential(\n",
+    "    nn.Flatten(),\n",
+    "    nn.Softplus(),\n",
+    "    nn.Linear(input_size, hidden_size, bias=True),\n",
+    "    nn.Softplus(),\n",
+    "    nn.Linear(hidden_size, output_size, bias=True)\n",
+    ")\n",
+    "\n",
+    "# Copy the weights and biases from the original model to the sequential model\n",
+    "sequential_model[2].weight.data = original_model.conv_to_fc.weight.data\n",
+    "sequential_model[2].bias.data = original_model.conv_to_fc.bias.data\n",
+    "sequential_model[4].weight.data = original_model.fc_out.weight.data\n",
+    "sequential_model[4].bias.data = original_model.fc_out.bias.data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Test the sequential model on some sample input\n",
+    "# You can change the sample input as needed\n",
+    "sample_input = x # 10 samples with 69 features each\n",
+    "sequential_output = sequential_model(sample_input)\n",
+    "print(\"Sequential output:\", normalizer.denorm(sequential_output))\n",
+    "\n",
+    "# Test the original model on the same sample input\n",
+    "original_output = original_model(sample_input)\n",
+    "print(original_output)\n",
+    "print(\"Original output:\", normalizer.denorm(original_output))\n",
+    "\n",
+    "# Compare the outputs of the two models\n",
+    "# They should be very close if not identical\n",
+    "print(\"Difference:\", torch.abs(sequential_output - original_output))\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "# **Obtaining Deep SHAP Values**"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create an explainer object\n",
+    "sequential_model\n",
+    "Deepexplainer = shap.DeepExplainer(sequential_model, x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Get SHAP values\n",
+    "deepshap_values = Deepexplainer.shap_values(x)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "# **Keras-Kernel SHAP Analysis**"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load up some numpy data\n",
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('tobmultireg500corplot_20241129_094823.csv',header=None)\n",
+    "\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,4):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a numpy array\n",
+    "y = [np.array(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [np.array(row) for row in df.iloc[:,2]]\n",
+    "x = [np.array(row) for row in df.iloc[:,3]]\n",
+    "\n",
+    "# Stack the list of numpy arrays to create a 2D array\n",
+    "y = np.stack(y)\n",
+    "y = y[:,1:] # Use one isoterm\n",
+    "y_hat = np.stack(y_hat)\n",
+    "x = np.stack(x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create an instance of the PyTorch model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 3\n",
+    "pytorch_model = original_model\n",
+    "\n",
+    "# Define a function to convert PyTorch tensors to NumPy arrays\n",
+    "def to_numpy(tensor):\n",
+    "    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()\n",
+    "\n",
+    "# Get the weights and biases of the PyTorch model as NumPy arrays\n",
+    "w1 = to_numpy(pytorch_model.conv_to_fc.weight)\n",
+    "b1 = to_numpy(pytorch_model.conv_to_fc.bias)\n",
+    "w2 = to_numpy(pytorch_model.fc_out.weight)\n",
+    "b2 = to_numpy(pytorch_model.fc_out.bias)\n",
+    "\n",
+    "\n",
+    "# Define the Keras model using the Sequential API\n",
+    "keras_model = keras.models.Sequential([\n",
+    "    keras.layers.Activation(\"softplus\", input_shape=(input_size,)),\n",
+    "    keras.layers.Dense(hidden_size, activation=\"softplus\"), # Remove weights argument\n",
+    "    keras.layers.Dense(output_size, activation=\"linear\")  # Remove weights argument\n",
+    "])\n",
+    "\n",
+    "# Set weights and biases after creating the layers\n",
+    "keras_model.layers[1].set_weights([w1.T, b1])  # Set weights for the first Dense layer\n",
+    "keras_model.layers[2].set_weights([w2.T, b2])  # Set weights for the second Dense layer\n",
+    "\n",
+    "# Test the Keras model on some sample input\n",
+    "sample_input = x\n",
+    "keras_output = keras_model.predict(torch.tensor(sample_input))\n",
+    "print(keras_output)\n",
+    "print(\"keras output:\", normalizer.denorm(torch.tensor(keras_output)))\n",
+    "\n",
+    "keras_outputdenorm = normalizer.denorm(torch.tensor(keras_output))\n",
+    "# Test the original model on the same sample input\n",
+    "original_output = original_model(torch.tensor(sample_input).to(torch.float32))\n",
+    "print(\"Original output:\", normalizer.denorm(original_output))\n",
+    "\n",
+    "# Compare the outputs of the two models\n",
+    "# They should be very close if not identical\n",
+    "print(\"Difference:\", torch.abs(torch.tensor(keras_output).to(torch.float32) - original_output.to(torch.float32)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Label data features used\n",
+    "# save the array as a pandas dataframe with the names that you specified\n",
+    "def featlabeler(x):\n",
+    "  # Convert PyTorch tensors to NumPy arrays\n",
+    "  if isinstance(x, torch.Tensor):\n",
+    "        x = x.detach().numpy()\n",
+    "  columns = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\",\"sa_tot_m2cm3\", \"pld\", \"lcd\"]\n",
+    "  if x.ndim == 1:\n",
+    "    x = np.reshape(x, (1, 69))\n",
+    "  x = pd.DataFrame(x, columns=columns)\n",
+    "  return x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Check them\n",
+    "x = featlabeler(x)\n",
+    "x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Use KernelExplainer to initialize explanation of the Keras model predictions\n",
+    "explainer = shap.KernelExplainer(keras_model.predict, x[:1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "shap_values = explainer(x[:1])"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Extract DeepSHAP values into Kernel SHAP explainer.This creates a Kernel-based explanation object using the DeepShap values\n",
+    "shap_values.values = deepshap_values\n",
+    "shap_values.data = x\n",
+    "shap_values.base_values = np.tile(np.mean(keras_output,axis =0).astype(np.float64), (100, 1)) # Change the number of base values (100,1) to the number of samples"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "print(shap_values.data.shape)\n",
+    "print(shap_values.base_values.shape)\n",
+    "print(shap_values.values.shape)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save explainer object\n",
+    "import pickle\n",
+    "\n",
+    "# Save the SHAP values as a pickle file\n",
+    "with open(\"SHAPtobmultireg100corplot.pkl\", \"wb\") as f:\n",
+    "    pickle.dump(shap_values, f)\n",
+    "\n",
+    "# Save the explainer object as a pickle file\n",
+    "with open(\"SHAPtobmultireg100corplotexplainer.pkl\", \"wb\") as f:\n",
+    "    pickle.dump(explainer, f)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load explainer object\n",
+    "import pickle\n",
+    "\n",
+    "# Load explainer object if necessary\n",
+    "with open(\"SHAPtobmultireg100corplot.pkl\", \"rb\") as f:\n",
+    "    # Load the SHAP values from the file\n",
+    "    shap_values = pickle.load(f)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "print(normalizer.denorm(torch.tensor(np.sum(shap_values.values[0][:,0])+shap_values.base_values[0][1])))\n",
+    "print(np.sum(shap_values.values[0][:,0])+shap_values.base_values[0][0])\n",
+    "#print(normalizer.denorm(torch.tensor(shap_values.values[:][0])))"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "# Function to perform the described operation for one dimension\n",
+    "def process_dimension(input_array):\n",
+    "    # Sums and extract sharply features for customized plots\n",
+    "    # Sum the first 64 features (columns 0 to 63)\n",
+    "    summed_features = np.sum(input_array[:, :64], axis=1)  # Shape: (n,)\n",
+    "\n",
+    "    # Extract the remaining 5 features (columns 64 to 68)\n",
+    "    remaining_features = input_array[:, 64:]  # Shape: (n, 5)\n",
+    "\n",
+    "    # Concatenate the sum with the remaining features along the second axis\n",
+    "    result = np.concatenate([summed_features[:, np.newaxis], remaining_features], axis=1)  # Shape: (n, 6)\n",
+    "\n",
+    "    return result\n",
+    "\n",
+    "# Apply the function for each dimension (2 in this case)\n",
+    "result_1 = process_dimension(shap_values.values[:, :, 1])  # Process the first dimension\n",
+    "#result_2 = process_dimension(shap_values.values[:, :, 2])  # Process the second dimension\n",
+    "\n",
+    "# The final results\n",
+    "print(\"Result 1 shape:\", result_1.shape)\n",
+    "#print(\"Result 2 shape:\", result_2.shape)\n",
+    "\n",
+    "# inspect the arrays\n",
+    "print(\"Result 1:\", result_1)\n",
+    "#print(\"Result 2:\", result_2)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "def plot_features_with_trend(features_array, dimension_array, dim_index=0, feature_indices=None, legends=None, trend_order=2, residual_threshold=0.05):\n",
+    "    \"\"\"\n",
+    "    Plots selected features against a specified dimension with custom legends, highlights trend-following data, and dims outliers.\n",
+    "\n",
+    "    Parameters:\n",
+    "    - features_array (numpy.ndarray): The array with features to plot.\n",
+    "    - dimension_array (numpy.ndarray): The array providing X values.\n",
+    "    - dim_index (int): The column index (0 or 1) of the dimension array to plot against.\n",
+    "    - feature_indices (list[int]): List of column indices from the features array to plot.\n",
+    "      If None, all features are plotted.\n",
+    "    - legends (list[str]): Custom legend labels for each selected feature.\n",
+    "      If None, default legends (\"Feature 1\", \"Feature 2\", etc.) are used.\n",
+    "    - trend_order (int): The polynomial order for fitting the trend line.\n",
+    "    - residual_threshold (float): Threshold for determining data points that follow the trend.\n",
+    "\n",
+    "    Returns:\n",
+    "    - None\n",
+    "    \"\"\"\n",
+    "    if feature_indices is None:\n",
+    "        feature_indices = list(range(features_array.shape[1]))  # Default to all columns\n",
+    "\n",
+    "    # Ensure the dimension index is valid\n",
+    "    if dim_index not in [0, 1]:\n",
+    "        raise ValueError(\"dim_index must be 0 or 1\")\n",
+    "\n",
+    "    # Ensure the legends are correctly specified\n",
+    "    if legends is not None and len(legends) != len(feature_indices):\n",
+    "        raise ValueError(\"The number of legends must match the number of feature indices\")\n",
+    "\n",
+    "    # Get the Y values from the specified dimension\n",
+    "    y_values = dimension_array[:, dim_index]\n",
+    "\n",
+    "    plt.figure(figsize=(10, 6))  # Adjust figure size for better visibility\n",
+    "\n",
+    "    for idx, feature_idx in enumerate(feature_indices):\n",
+    "        if feature_idx >= features_array.shape[1]:\n",
+    "            raise ValueError(f\"Feature index {feature_idx} is out of bounds for the features array\")\n",
+    "\n",
+    "        x_values = features_array[:, feature_idx]\n",
+    "        label = legends[idx] if legends is not None else f\"Feature {feature_idx + 1}\"\n",
+    "\n",
+    "        # Fit a polynomial trend line\n",
+    "        coefficients = np.polyfit(x_values, y_values, trend_order)\n",
+    "        trend_line = np.polyval(coefficients, x_values)\n",
+    "\n",
+    "        # Compute residuals and classify points\n",
+    "        residuals = np.abs(y_values - trend_line)\n",
+    "        on_trend_indices = residuals < residual_threshold  # Points close to the trend\n",
+    "        outlier_indices = ~on_trend_indices               # Points far from the trend\n",
+    "\n",
+    "        # Plot trend-following points\n",
+    "        plt.scatter(\n",
+    "            x_values[on_trend_indices], y_values[on_trend_indices],\n",
+    "            label=f\"{label} (On Trend)\", alpha=0.8, edgecolor=\"black\", color=\"magenta\", marker='o'\n",
+    "        )\n",
+    "\n",
+    "        # Plot outliers with lower opacity\n",
+    "        plt.scatter(\n",
+    "            x_values[outlier_indices], y_values[outlier_indices],\n",
+    "            label=f\"{label} (Outliers)\", alpha=0.3, color=\"grey\", marker='o'\n",
+    "        )\n",
+    "\n",
+    "        # Plot the trend line\n",
+    "        sorted_indices = np.argsort(x_values)\n",
+    "        plt.plot(x_values[sorted_indices], trend_line[sorted_indices],\n",
+    "                 linestyle='--',color='black', linewidth=2, alpha=0.7, label=f\"{label} Trend\")\n",
+    "\n",
+    "    # Add labels, title, grid, and legend\n",
+    "    plt.xlabel(\"Largest Cavity Diameter Feature SHAP Values\", fontsize=14)\n",
+    "    plt.ylabel(\"Volumetric Deliverable Capacity ($cm^3(STP)/cm^3$)\", fontsize=14)\n",
+    "    plt.legend(loc=\"best\", fontsize=12, frameon=True)\n",
+    "    plt.grid(visible=True, alpha=0.6)\n",
+    "    plt.tight_layout()\n",
+    "\n",
+    "    # Save the plot with high resolution\n",
+    "    plt.savefig('LCDSHAP_Vs_VDC_ch4_35bar_298k_100samp.png', dpi=600,bbox_inches='tight')\n",
+    "\n",
+    "    # Show the plot\n",
+    "    plt.show()\n",
+    "\n",
+    "# Example usage\n",
+    "# Plot feature 0 of result_1 against the 0th dimension of keras_outputdenorm with custom legends\n",
+    "plot_features_with_trend(\n",
+    "    result_1,\n",
+    "    keras_outputdenorm,\n",
+    "    dim_index=1,\n",
+    "    feature_indices=[2],\n",
+    "    legends=[\"MOFs\"],\n",
+    "    trend_order=2,  # Polynomial trend order\n",
+    "    residual_threshold=20  # Highlight points near the trend line\n",
+    ")\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "shap.plots.bar(shap_values[:,:,0], max_display=6 ,show=False) # Set to False to modify\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "shap.plots.beeswarm(shap_values[:,:,1],show=False)\n",
+    "\n",
+    "# Save the plot with high resolution\n",
+    "plt.savefig('tobmultireg100corplotbeeswarm.png', dpi=600,bbox_inches='tight')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# waterfall plot for first observation\n",
+    "shap.plots.waterfall(shap_values[378,:,0],show=False)\n",
+    "\n",
+    "# Save the plot with high resolution\n",
+    "plt.savefig('h2coreRegwaterfall_ADATAC_clean.png', dpi=600,bbox_inches='tight')\n",
+    "\n",
+    "# Show the plot with the title\n",
+    "plt.show()"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "order = np.argsort(keras_output[:,0])\n",
+    "shap.plots.heatmap(shap_values[:,:,0],instance_order=order,show=False)\n",
+    "# Save the plot with high resolution\n",
+    "#plt.savefig('h2CoreMat.png', dpi=600,bbox_inches='tight')\n",
+    "\n",
+    "# Show the plot with the title\n",
+    "plt.show()"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "\n",
+    "#order = np.argsort(shap_values.data[:,66])\n",
+    "feature_names = [f\"Crystal Feature {i+1}\" for i in range(64)] + [\"vf\", \"sa_tot_m2g\", \"pld\", \"lcd\", \"sa_tot_m2cm3\"]\n",
+    "shap_values.feature_names = feature_names # Set feature names\n",
+    "\n",
+    "shap.plots.heatmap(shap_values[:,:,0],instance_order=order,show=False)\n",
+    "\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

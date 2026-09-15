@@ -1,0 +1,700 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install pymatgen > /dev/null 2>&1  # Suppress installation informational messages\n",
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "import torch\n",
+    "import torch.nn as nn\n",
+    "import pandas as pd\n",
+    "import csv\n",
+    "from ast import literal_eval\n",
+    "import os\n",
+    "import keras"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "print(keras.__version__)"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/work_cgcnn/cgcnn_Trainer')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ls"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load model Directly\n",
+    "from cgcnn.model import CrystalGraphConvNet_1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install -q -r requirements.txt > /dev/null 2>&1\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Predict with a trained model\n",
+    "!python predict.py h2_multireg_100bar_2barmodel_best.pth.tar data hMof_cifs --task regression --Additional_feat_num 5 --Target_num 2 --id_prop id_prop_reg_h2  --useable_samples 1000"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initialize model for surogatoin using the consistent hyper-parameters used\n",
+    "model = CrystalGraphConvNet_1(orig_atom_fea_len = 92, nbr_fea_len= 41,\n",
+    "                                atom_fea_len=64,\n",
+    "                                added_fea_len=5,\n",
+    "                                classnum = 2,\n",
+    "                                n_conv=3,\n",
+    "                                h_fea_len=128,\n",
+    "                                n_h=1,\n",
+    "                                classification=False)\n",
+    "\n",
+    "# Specify Normaliser\n",
+    "class Normalizer(object):\n",
+    "    \"\"\"Normalize a Tensor column by column and restore it later. \"\"\"\n",
+    "\n",
+    "    def __init__(self, tensor):\n",
+    "        \"\"\"tensor is taken as a sample to calculate the mean and std\"\"\"\n",
+    "        self.mean = torch.mean(tensor, dim=0)\n",
+    "        self.std = torch.std(tensor, dim=0)\n",
+    "\n",
+    "    def norm(self, tensor):\n",
+    "        return (tensor - self.mean) / self.std\n",
+    "\n",
+    "    def denorm(self, normed_tensor):\n",
+    "        return normed_tensor * self.std + self.mean\n",
+    "\n",
+    "    def state_dict(self):\n",
+    "        return {'mean': self.mean,\n",
+    "                'std': self.std}\n",
+    "\n",
+    "    def load_state_dict(self, state_dict):\n",
+    "        self.mean = state_dict['mean']\n",
+    "        self.std = state_dict['std']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load the parent model state dictionary\n",
+    "model_state_dict = torch.load('h2_multireg_100bar_2barmodel_best.pth.tar')\n",
+    "\n",
+    "# Apply the state dictionary to your model\n",
+    "model.load_state_dict(model_state_dict['state_dict'])\n",
+    "\n",
+    "# Obtain target normalizer\n",
+    "normalizer = Normalizer(torch.tensor([[0.0,0.0],[ 0.0,0.0]]))\n",
+    "model_state_dict['normalizer']['mean'] = model_state_dict['normalizer']['mean'][-2:]\n",
+    "model_state_dict['normalizer']['std'] = model_state_dict['normalizer']['std'][-2:]\n",
+    "normalizer.load_state_dict(model_state_dict['normalizer'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Now print out the weights\n",
+    "print('Weights of conv_to_fc layer:')\n",
+    "print('Weights size:', model.conv_to_fc.weight.size())\n",
+    "print('Weights:', model.conv_to_fc.weight)\n",
+    "print('Bias size:', model.conv_to_fc.bias.size())\n",
+    "print('Bias:', model.conv_to_fc.bias)\n",
+    "'''\n",
+    "for i, fc_layer in enumerate(model.fcs):\n",
+    "    print(f'\\nWeights of fc{i} layer in fcs:')\n",
+    "    print('Weights size:', fc_layer.weight.size())\n",
+    "    print('Weights:', fc_layer.weight)\n",
+    "    print('Bias size:', fc_layer.bias.size())\n",
+    "    print('Bias:', fc_layer.bias)\n",
+    "'''\n",
+    "print('Weights of fc_out layer:')\n",
+    "print('Weights size:', model.fc_out.weight.size())\n",
+    "print('Weights:', model.fc_out.weight)\n",
+    "print('Bias size:', model.fc_out.bias.size())\n",
+    "print('Bias:', model.fc_out.bias)\n",
+    "\n",
+    "# Activation Functions used\n",
+    "print('Activation function of conv_to_fc layer:')\n",
+    "print(model.conv_to_fc_softplus)\n",
+    "\n",
+    "# Check if 'softpluses' attribute exists and print it out\n",
+    "if hasattr(model, 'softpluses') or hasattr(model,'logsoftmax'):\n",
+    "  # Print out the LogSoftmax activation function\n",
+    "    print('Activation function of fc_out layer:')\n",
+    "    print(model.logsoftmax)\n",
+    "    for i, softplus in enumerate(model.softpluses):\n",
+    "        print(f'\\nActivation function of fc{i} layer in fcs:')\n",
+    "        print(softplus)\n",
+    "else:\n",
+    "    print(\"The model does not have 'softpluses' attribute.\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create surogate model architecture for Regression tasks\n",
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "\n",
+    "        self.conv_to_fc_softplus = nn.Softplus()\n",
+    "        self.conv_to_fc = nn.Linear(input_size, hidden_size)\n",
+    "        self.fc_out = nn.Linear(hidden_size, output_size)\n",
+    "\n",
+    "    def forward(self, crys_fea):\n",
+    "        crys_fea = self.conv_to_fc(self.conv_to_fc_softplus(crys_fea))\n",
+    "        crys_fea = self.conv_to_fc_softplus(crys_fea)\n",
+    "        out = self.fc_out(crys_fea)\n",
+    "        return out"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Create surogate model architecture for Regression tasks\n",
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "        self.conv_to_fc_softplus = nn.Softplus()\n",
+    "        self.conv_to_fc = nn.Linear(input_size, hidden_size)\n",
+    "        self.fc_out = nn.Linear(hidden_size, output_size)\n",
+    "\n",
+    "        self.model = nn.Sequential(\n",
+    "            self.conv_to_fc_softplus,\n",
+    "            self.conv_to_fc,\n",
+    "            self.conv_to_fc_softplus,\n",
+    "            self.fc_out,\n",
+    "        )\n",
+    "\n",
+    "    def forward(self, crys_fea):\n",
+    "        out = self.model(crys_fea)\n",
+    "        return out\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Create surogate model architecture for Regression tasks\n",
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "\n",
+    "        self.conv_to_fc_softplus = nn.Softplus()\n",
+    "        self.conv_to_fc = nn.Linear(input_size, hidden_size)\n",
+    "        self.fc_out = nn.Linear(hidden_size, output_size)\n",
+    "\n",
+    "    def forward(self, crys_fea):\n",
+    "        # convert to torch first\n",
+    "        crys_fea = torch.tensor(x, dtype=torch.float32)\n",
+    "        with torch.no_grad():\n",
+    "          crys_fea = self.conv_to_fc(self.conv_to_fc_softplus(crys_fea))\n",
+    "          crys_fea = self.conv_to_fc_softplus(crys_fea)\n",
+    "          out = self.fc_out(crys_fea)\n",
+    "        return out.numpy()"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Create surogate model architecture for Regression tasks\n",
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "\n",
+    "        self.conv_to_fc_softplus = nn.Softplus()\n",
+    "        self.conv_to_fc = nn.Linear(input_size, hidden_size)\n",
+    "        self.conv_to_fct = nn.Linear(hidden_size, input_size)\n",
+    "        self.fc_out = nn.Linear(hidden_size, output_size)\n",
+    "        self.fc_outt = nn.Linear(output_size, hidden_size)\n",
+    "    def forward(self, crys_fea):\n",
+    "        try:\n",
+    "          crys_fea = self.conv_to_fc(self.conv_to_fc_softplus(crys_fea))\n",
+    "        except:\n",
+    "           crys_fea = self.conv_to_fct(self.conv_to_fc_softplus(crys_fea))\n",
+    "        crys_fea = self.conv_to_fc_softplus(crys_fea)\n",
+    "        try:\n",
+    "          out = self.fc_out(crys_fea)\n",
+    "        except:\n",
+    "          out = self.fc_outt(crys_fea)\n",
+    "        return out"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "class CustomModel(nn.Module):\n",
+    "    def __init__(self, input_size, hidden_size, output_size):\n",
+    "        super(CustomModel, self).__init__()\n",
+    "        self.weight1 = nn.Parameter(torch.Tensor(hidden_size, input_size))\n",
+    "        self.bias1 = nn.Parameter(torch.Tensor(hidden_size))\n",
+    "        self.weight2 = nn.Parameter(torch.Tensor(output_size, hidden_size))\n",
+    "        self.bias2 = nn.Parameter(torch.Tensor(output_size))\n",
+    "        self.softplus = nn.Softplus()\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        x = self.softplus(x)\n",
+    "        x = torch.matmul(x, self.weight1.t()) + self.bias1\n",
+    "        x = self.softplus(x)\n",
+    "        x = torch.matmul(x, self.weight2.t()) + self.bias2\n",
+    "        return x\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "class surogateModel(nn.Module):\n",
+    "    def __init__(self):\n",
+    "        super(surogateModel, self).__init__()\n",
+    "\n",
+    "        self.model = nn.Sequential(\n",
+    "            nn.Linear(69, 128),\n",
+    "            nn.Softplus(),\n",
+    "            nn.Linear(128, 2)\n",
+    "        )\n",
+    "\n",
+    "    def forward(self, crys_fea):\n",
+    "        out = self.model(crys_fea)\n",
+    "        return out\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "class CustomSoftplus(nn.Module):\n",
+    "    def __init__(self, beta=1, threshold=20):\n",
+    "        super(CustomSoftplus, self).__init__()\n",
+    "        self.beta = beta\n",
+    "        self.threshold = threshold\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        return torch.where(x * self.beta > self.threshold, x, torch.log1p(torch.exp(self.beta * x)) / self.beta)\n",
+    "\n",
+    "class CustomModel(nn.Module):\n",
+    "    def __init__(self, weight1, bias1, weight2, bias2, softplus):\n",
+    "        super(CustomModel, self).__init__()\n",
+    "        self.weight1 = weight1\n",
+    "        self.bias1 = bias1\n",
+    "        self.weight2 = weight2\n",
+    "        self.bias2 = bias2\n",
+    "        self.softplus = softplus\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        x = self.softplus.forward(x)\n",
+    "        x = torch.matmul(x, self.weight1.t()) + self.bias1\n",
+    "        x = self.softplus.forward(x)\n",
+    "        x = torch.matmul(x, self.weight2.t()) + self.bias2\n",
+    "        return x\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "t= model.conv_to_fc.weight\n",
+    "print(type(t.detach()))\n",
+    "print(t.shape)\n",
+    "print(t.t(),t.t().shape)"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Transfer weigts to surogate model\n",
+    "# Create the new model\n",
+    "surg_model = CustomModel(69, 128, 2)\n",
+    "\n",
+    "# Assign the weights from the original model to the surogate model\n",
+    "surg_model.weight1 = model.conv_to_fc.weight\n",
+    "surg_model.bias1 = model.conv_to_fc.bias\n",
+    "surg_model.weight2 = model.fc_out.weight\n",
+    "surg_model.bias2 = model.fc_out.bias"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Transfer weigts to surogate model\n",
+    "# Create the new model\n",
+    "surg_model = surogateModel(69, 128, 2)\n",
+    "\n",
+    "# Assign the weights from the original model to the surogate model\n",
+    "surg_model.conv_to_fc.weight = model.conv_to_fc.weight\n",
+    "surg_model.conv_to_fc.bias = model.conv_to_fc.bias\n",
+    "surg_model.fc_out.weight = model.fc_out.weight\n",
+    "surg_model.fc_out.bias = model.fc_out.bias"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "surg_model = surogateModel(69, 128, 2)\n",
+    "\n",
+    "# Assign the weights from the original model to the surogate model\n",
+    "surg_model.conv_to_fc.weight = model.conv_to_fc.weight\n",
+    "surg_model.conv_to_fc.bias = model.conv_to_fc.bias\n",
+    "surg_model.fc_out.weight = model.fc_out.weight\n",
+    "surg_model.fc_out.bias = model.fc_out.bias\n",
+    "# Transpose the weights from the original model and assign to the new model\n",
+    "surg_model.conv_to_fct.weight.data = model.conv_to_fc.weight.data.transpose(1, 0)\n",
+    "surg_model.conv_to_fct.bias.data = model.conv_to_fc.bias.data.view(-1, 1).transpose(0, 1)\n",
+    "surg_model.fc_outt.weight.data = model.fc_out.weight.data.transpose(1, 0)\n",
+    "surg_model.fc_outt.bias.data = model.fc_out.bias.data.view(-1, 1).transpose(0, 1)"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save the surogate model\n",
+    "torch.save(surg_model.state_dict(), 'surg_model.pth')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import numpy as np\n",
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('predicted_results_20231222_181922.csv',header=None)\n",
+    "\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,4):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a numpy array\n",
+    "y = [np.array(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [np.array(row) for row in df.iloc[:,2]]\n",
+    "x = [np.array(row) for row in df.iloc[:,3]]\n",
+    "\n",
+    "# Stack the list of numpy arrays to create a 2D array\n",
+    "y = np.stack(y)\n",
+    "y = y[:,1:]\n",
+    "y_hat = np.stack(y_hat)\n",
+    "x = np.stack(x)\n",
+    "\n",
+    "# Print the resulting 2D array\n",
+    "#print(y)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Extract both crystal encoded featrues and normalized global features\n",
+    "df = pd.read_csv('predicted_results_{date_time_str}.csv',header=None)\n",
+    "\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,4):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a PyTorch tensor\n",
+    "y = [torch.tensor(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [torch.tensor(row) for row in df.iloc[:,2]]\n",
+    "x = [torch.tensor(row,requires_grad=True) for row in df.iloc[:,3]]\n",
+    "\n",
+    "\n",
+    "# Create a 2D tensor from the list of tensors\n",
+    "y = torch.stack(y)\n",
+    "y_hat = torch.stack(y_hat)\n",
+    "x = torch.stack(x)\n",
+    "\n",
+    "# Print the resulting 2D tensor\n",
+    "print(type(x))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create a new instance of surogate model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 2\n",
+    "surg_model = surogateModel(input_size, hidden_size, output_size)\n",
+    "\n",
+    "# Load the surogate model state dictionary\n",
+    "model_state_dict = torch.load('surg_model.pth')\n",
+    "\n",
+    "# Apply the state dictionary to your model\n",
+    "surg_model.load_state_dict(model_state_dict)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Use surogate model for prediction\n",
+    "out = surg_model(x)\n",
+    "\n",
+    "# Denormalize and view predictions\n",
+    "print('Denormed Prediction:\\n', normalizer.denorm(torch.tensor(out, dtype=torch.float32)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Create an instance of the PyTorch model\n",
+    "input_size = 69\n",
+    "hidden_size = 128\n",
+    "output_size = 2\n",
+    "pytorch_model = surg_model\n",
+    "\n",
+    "# Define a function to convert PyTorch tensors to NumPy arrays\n",
+    "def to_numpy(tensor):\n",
+    "    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()\n",
+    "\n",
+    "# Get the weights and biases of the PyTorch model as NumPy arrays\n",
+    "w1 = to_numpy(pytorch_model.conv_to_fc.weight)\n",
+    "b1 = to_numpy(pytorch_model.conv_to_fc.bias)\n",
+    "w2 = to_numpy(pytorch_model.fc_out.weight)\n",
+    "b2 = to_numpy(pytorch_model.fc_out.bias)\n",
+    "\n",
+    "\n",
+    "# Define the Keras model using the Sequential API\n",
+    "keras_model = keras.models.Sequential([\n",
+    "    keras.layers.Activation(\"softplus\", input_shape=(input_size,)),\n",
+    "    keras.layers.Dense(hidden_size, activation=\"softplus\", weights=[w1.T, b1]),\n",
+    "    keras.layers.Dense(output_size, activation=\"linear\", weights=[w2.T, b2])\n",
+    "])\n",
+    "# Test the Keras model on some sample input\n",
+    "# You can change the sample input as needed\n",
+    "sample_input = np.random.rand(10, input_size) # 10 samples with 69 features each\n",
+    "keras_output = keras_model.predict(sample_input)\n",
+    "print(\"Keras output:\", keras_output)\n",
+    "\n",
+    "# Convert the sample input to a PyTorch tensor\n",
+    "sample_input = torch.from_numpy(sample_input).float()\n",
+    "pytorch_output = pytorch_model(sample_input)\n",
+    "print(\"PyTorch output:\", pytorch_output)"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "\n",
+    "# Use KernelExplainer to explain the Keras model predictions\n",
+    "explainer = shap.KernelExplainer(keras_model.predict, sample_input)\n",
+    "shap_values = explainer.shap_values(sample_input)\n",
+    "\n",
+    "# Plot the force plots for each sample\n",
+    "shap.force_plot(explainer.expected_value, shap_values, sample_input)\n",
+    "\n",
+    "# Plot the bee swarm plots for each feature\n",
+    "shap.summary_plot(shap_values, sample_input, plot_type=\"dot\")\n",
+    "\n",
+    "# Plot the mean shap values for each feature\n",
+    "shap.summary_plot(shap_values, sample_input, plot_type=\"bar\")"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "## **MODEL SHAP ANALYSIS**"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "!pip install numpy==1.19.5"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# imports\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import shap\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "# **XG Boost Regressor Surogate Model for SHAP analysis**"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import numpy as np\n",
+    "import xgboost as xgb\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error\n",
+    "\n",
+    "# Assuming you have a 2D numpy array of size 100000x69\n",
+    "# X is your feature matrix and y is your target variable\n",
+    "X = x\n",
+    "y = y\n",
+    "\n",
+    "# Split the data into training and testing sets\n",
+    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n",
+    "\n",
+    "# Convert the dataset into an optimized data structure called Dmatrix that XGBoost supports\n",
+    "D_train = xgb.DMatrix(X_train, label=y_train)\n",
+    "D_test = xgb.DMatrix(X_test, label=y_test)\n",
+    "\n",
+    "# Define the parameters for the XGBoost.\n",
+    "# These are example parameters, you might need to adjust them for your specific problem\n",
+    "param = {\n",
+    "    'eta': 0.3,\n",
+    "    'max_depth': 3,\n",
+    "    'objective': 'reg:squarederror'}\n",
+    "\n",
+    "steps = 20  # The number of training iterations\n",
+    "\n",
+    "# Train the model\n",
+    "model = xgb.train(param, D_train, steps)\n",
+    "\n",
+    "# Use the model to make predictions\n",
+    "preds = model.predict(D_test)\n",
+    "\n",
+    "# Calculate RMSE\n",
+    "rmse = np.sqrt(mean_squared_error(y_test, preds))\n",
+    "print(\"RMSE: %f\" % (rmse))\n",
+    "# Calculate R-squared\n",
+    "r2 = r2_score(y_test, preds)\n",
+    "print(\"R-squared: %f\" % (r2))\n",
+    "\n",
+    "# Calculate MAE\n",
+    "mae = mean_absolute_error(y_test, preds)\n",
+    "print(\"MAE: %f\" % (mae))"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# prompt: check the size of an np array\n",
+    "\n",
+    "a.shape\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

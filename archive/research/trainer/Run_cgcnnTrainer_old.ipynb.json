@@ -1,0 +1,92 @@
+{
+ "nbformat": 4,
+ "nbformat_minor": 0,
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Install and import some default libraries\n",
+    "!pip install pymatgen > /dev/null 2>&1  # Suppress installation informational messages\n",
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "import os"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/work_cgcnn/cgcnn_Trainer')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls data/"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Run CGCNN from python script extracting data from a zipped file\n",
+    "\n",
+    "!python mainz.py data Tobacco_data --task classification --epochs 200 --train-size 600 --val-size 150 --test-size 50 --Additional_feat_num 5 --Class_num 4 --id_prop id_propTobMethClass --useable_samples 800 --model_name ch4Tob_retest4 --resumeTrain /content/drive/MyDrive/work_cgcnn/cgcnn_Trainer/h2_100bar_30kTrainedcheckpoint.pth.tar"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Resume From checkpoints\n",
+    "!python mainz.py /content/drive/MyDrive/MatSci2_Group/Multiclass_cgcnn/data hMof_cifs --task classification --epochs 100 --train-ratio 0.8 --val-ratio 0.1 --test-ratio 0.1 --Additional_feat_num 5 --Class_num 4 --resume /content/drive/MyDrive/MatSci2_Group/Multiclass_cgcnn/checkpoint.pth.tar\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ]
+}

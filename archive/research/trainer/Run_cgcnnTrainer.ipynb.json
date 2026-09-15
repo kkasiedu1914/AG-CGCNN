@@ -1,0 +1,124 @@
+{
+ "nbformat": 4,
+ "nbformat_minor": 0,
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Install and import some default libraries\n",
+    "!pip install pymatgen > /dev/null 2>&1  # Suppress installation informational messages\n",
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "import os"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer_old_updated')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Run CGCNN from python script extracting data from a zipped file\n",
+    "\n",
+    "!python mainz.py data hMof_cifs --task classification --epochs 100 --train-size 5500 --val-size 1000 --test-size 1000 --Additional_feat_num 5 --Class_num 4 --id_prop id_prop_ch4_35bar_18000samp_molkg --useable_samples 7500 --model_name ch4hmof_highP_35bar_molkg"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Resume From checkpoints\n",
+    "!python mainz.py data Tobacco_data --task regression --epochs 181 --train-size 7000 --val-size 500 --test-size 500 --Additional_feat_num 5 --Target_num 2 --id_prop id_propTob_h2_6bar_100bar_13236samp_gl --useable_samples 8000 --model_name h2_multireg_pretrain_6bar_100bar_tob --resume h2_multireg_100bar_2barmodel_best.pth.tar --use_dataloader h2_multireg_pretrain_6bar_100bar_tobdataloader_objs.pth.tar\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Predict for an instance of data\n",
+    "!python predict.py ch4hmof_highP_35bar_molkgmodel_best.pth.tar data hMof_cifs --task classification --Additional_feat_num 5 --Class_num 4 --id_prop id_prop_ch4_35bar_18000samp_molkg  --predict_file_name ch4_hmof_35bar_molkgpreds_loaderprov --use_dataloader ch4hmof_highP_35bar_molkgdataloader_objs.pth.tar"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Calculate Prediction metric if plausible\n",
+    "# For Classification: Accuracy\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "from sklearn import metrics\n",
+    "from ast import literal_eval\n",
+    "\n",
+    "#Extract both crystal encoded featrues and normalized global features from predicted results\n",
+    "df = pd.read_csv('ch4_hmof_35bar_molkgpreds_loaderprov_20240627_133345.csv',header=None)\n",
+    "\n",
+    "y = [np.array(row) for row in df.iloc[:,1]]\n",
+    "y_hat = [np.array(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "df.drop(df.columns[[1, 2]], axis=1, inplace=True)\n",
+    "# Convert string representation of lists to actual lists using literal_eval\n",
+    "for i in range(1,3):\n",
+    "  df.iloc[:,i] = df.iloc[:,i].apply(literal_eval)\n",
+    "\n",
+    "# Convert each row to a numpy array\n",
+    "y_prob = [np.array(row) for row in df.iloc[:,1]]\n",
+    "x = [np.array(row) for row in df.iloc[:,2]]\n",
+    "\n",
+    "# Stack the list of numpy arrays to create a 2D array\n",
+    "target_label = np.stack(y)\n",
+    "#y_prob = np.stack(y_prob)\n",
+    "#y = y[:,1:] # Use one isoterm\n",
+    "pred_label = np.stack(y_hat)\n",
+    "#x = np.stack(x)\n",
+    "\n",
+    "accuracy = metrics.accuracy_score(target_label,pred_label)\n",
+    "print(f'Accuracy score: {accuracy}')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ]
+}

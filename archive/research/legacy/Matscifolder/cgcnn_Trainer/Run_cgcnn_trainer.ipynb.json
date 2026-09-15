@@ -1,0 +1,103 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Install and import some default libraries\n",
+    "!pip install pymatgen > /dev/null 2>&1  # Suppress installation informational messages\n",
+    "from pymatgen.core.structure import Structure\n",
+    "from pymatgen.io.cif import CifParser\n",
+    "\n",
+    "import os"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ls"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ls data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# log normalization\n",
+    "!python mainz.py data hMof_cifs --task regression --epochs 100 --train-size 2450 --val-size 700 --test-size 350 --Additional_feat_num 5 --Target_num 2 --id_prop idprop_cm3STP_cm3 --model_name h2_Log_reg_test_cmA3500 --useable_samples 3500"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Training\n",
+    "!python mainz.py data hMof_cifs --task regression --epochs 100 --train-size 3500 --val-size 400 --test-size 100 --Additional_feat_num 5 --Target_num 2 --id_prop idprop_cm3STP_cm3 --model_name h2_multiregcm3_test --useable_samples 4000 --resumeTrain /content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/h2_multireg_100bar_2barcheckpoint.pth.tar\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ls data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Resume from checkpoint\n",
+    "!python mainz.py data hMof_cifs --task classification --epochs 200 --train-ratio 0.8 --val-ratio 0.1 --test-ratio 0.1 --Additional_feat_num 5 --Class_num 4 --id_prop id_prop_h2_2bar_secnd3k --model_name h2_2bar_6ktrained --resumeTrain h2_2bar_3ktrainedcheckpoint.pth.tar"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

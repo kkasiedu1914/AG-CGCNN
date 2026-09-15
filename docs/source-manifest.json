@@ -1,0 +1,874 @@
+[
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1_5_cloud.ipynb",
+    "sha256": "2d3de0fee86e45336983b831127d69cc1fa9a28cd071bb9c1902fd519bc9d781",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1_5_cloud.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/mainz.py",
+    "sha256": "13b0b7d20cec2115a004dd9759dfa104b2255072339fdafa7d74390ffcf728d2",
+    "published": "archive/research/trainer/mainz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/predict.py",
+    "sha256": "78c3fe75575eaedebeddf194a706d323fcb10d1a9cb954e298bb69d11aacdf67",
+    "published": "archive/research/trainer/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1_6_class.ipynb",
+    "sha256": "a4e17556aa88d712f562e69af16f529a8076f3d659b9c3acc9778a05411475d9",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1_6_class.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/Run_cgcnnTrainer.ipynb",
+    "sha256": "3c7f7064e30c03007be7d538b340484809e476e1c92ff65fc3d29432e2841a87",
+    "published": "archive/research/trainer/Run_cgcnnTrainer.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/Run_cgcnnTrainer_old.ipynb",
+    "sha256": "77d8181fe29b7642115661657b2ccdaf1caf960ac84126182621b1132ac671e3",
+    "published": "archive/research/trainer/Run_cgcnnTrainer_old.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/mainz-befpre-datasaver_22_06_24.py",
+    "sha256": "adcbf77bcdf843c57f418ebb05c7bcdbafc1d6d281d09cc193347c73d319b612",
+    "published": "archive/research/trainer/mainz-befpre-datasaver_22_06_24.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1_5_class.ipynb",
+    "sha256": "a8a1b85a0a3ff284d9e162310508c1b1b3085e5b5a09e9452749e0b4bf95ca88",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1_5_class.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/mainzbeforesampling.py",
+    "sha256": "8df054226c4c6e575594f948701c579b675ee01e8f4962ac464f4f67cc108b6a",
+    "published": "archive/research/trainer/mainzbeforesampling.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/predict_beforsamplingrange.py",
+    "sha256": "b1d5b487b5db30ff98ef5440f057c65c01045b1c651f63674235fbef2444682f",
+    "published": "archive/research/trainer/predict_beforsamplingrange.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1.4.ipynb",
+    "sha256": "121e5be978f1c509931f5abbd5a245a284187f4fbed8a8ace962593448512bce",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1.4.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/predict-before_predict_checkpoints.py",
+    "sha256": "b1d5b487b5db30ff98ef5440f057c65c01045b1c651f63674235fbef2444682f",
+    "published": "archive/research/trainer/predict-before_predict_checkpoints.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1_4.ipynb",
+    "sha256": "d2c17bc86746f904cd5dbaf031ef8097a3ead289908e4c5d0c3e4917a4820a6e",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1_4.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1.4-class.ipynb",
+    "sha256": "ce62b6ef30b19e9c7c4bcd27238007f567fa242f29cac6c603f76f41f9ec3afd",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1.4-class.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/predict-beforeNamParam.py",
+    "sha256": "3626c615ea2dddbd6a36a604231b0dc17a5c3a3f9c99f2da38fe310a4ccef404",
+    "published": "archive/research/trainer/predict-beforeNamParam.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1.3-class.ipynb",
+    "sha256": "f4c2e63340bcd5b8e93ad258964eb618454d77ad6df88897738a47f59c9686d2",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1.3-class.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/SHAPLAB_env.yml",
+    "sha256": "89fac12b622ba42d759b33c9a501386a075cc5561a7204b2cf5e5233f36e9d3d",
+    "published": "archive/research/trainer/SHAPLAB_env.yml",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS_v1.2-class_.ipynb",
+    "sha256": "1f71d6f18d85de03388313fccc0859d7565b660532c1af0c26497b75543e36a9",
+    "published": "archive/research/trainer/SHAP_ANALYSIS_v1.2-class_.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/main - Copy after SHAP integration before multiclass shap.py",
+    "sha256": "1f1d17b7cade2501d1a8429ef2fab691f24731c9aa26b749b233def668c071b8",
+    "published": "archive/research/trainer/main - Copy after SHAP integration before multiclass shap.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/outputpack1.py",
+    "sha256": "64a0281d28d76f78228aa2c5deca84628bfd95b0cbd6bf51781031e2eb674727",
+    "status": "omitted obsolete cloud/upload or desktop automation helper"
+  },
+  {
+    "source": "trainer/transmitter.py",
+    "sha256": "b1d356ee44c45681a69ce61c52f8c060f99ae96b8e2b77209925816af5849d30",
+    "status": "omitted obsolete cloud/upload or desktop automation helper"
+  },
+  {
+    "source": "trainer/SHAP_ANALYSIS.ipynb",
+    "sha256": "5649fdb6a3e80e64ee94ec4f04f0590e01fee1bdab5324417c8c0a23e0d2e1b1",
+    "published": "archive/research/trainer/SHAP_ANALYSIS.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/requirements2.txt",
+    "sha256": "9709cb75e3414467655af26e4e8d62fe105f845ff364604faf82671a59025a37",
+    "published": "archive/research/trainer/requirements2.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/mainz - Copy_beforeSHAP.py",
+    "sha256": "82800656576b8a486554f992294c777b788f80c421ad348f314695ea569250cc",
+    "published": "archive/research/trainer/mainz - Copy_beforeSHAP.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/requirements.txt",
+    "sha256": "d3496bc8c60351ee37acb26375fc707870892fcac83cfa953a871651073ecbce",
+    "published": "archive/research/trainer/requirements.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/requirements1.txt",
+    "sha256": "7552025d555a21982e74c9301eb331d1c88aef8f3388c304edd483fb865db696",
+    "published": "archive/research/trainer/requirements1.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/mainz-with-logscaling.py",
+    "sha256": "afd753b81fd77b5033788deb15ca5dbcb2427177e3a6c89ff1abd1e55ba52832",
+    "published": "archive/research/trainer/mainz-with-logscaling.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/Run_cgcnn_co2_2.5bar_trainer.ipynb",
+    "sha256": "e8cd2d3cfceded32cbba97ee04fa041570061aa68e04742bee4748b49d94ab43",
+    "published": "archive/research/trainer/Run_cgcnn_co2_2.5bar_trainer.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/Run_cgcnn_h2_100bar_trainer.ipynb",
+    "sha256": "787a5bbccca64d4af0542ce811b93125b0e5c1cbb0ae21a52c1a1a507985a242",
+    "published": "archive/research/trainer/Run_cgcnn_h2_100bar_trainer.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/Run_cgcnn6000.ipynb",
+    "sha256": "6d31c43c9eee3417a4077b72b256014a70e3faab998e746849b0e7d6a7e845ee",
+    "published": "archive/research/trainer/Run_cgcnn6000.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "trainer/main.py",
+    "sha256": "1f1d17b7cade2501d1a8429ef2fab691f24731c9aa26b749b233def668c071b8",
+    "published": "archive/research/trainer/main.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/model.py",
+    "sha256": "dc43a7dd3cb9d22b71060fa2a84f619b329a4a3b49adb169c525d68ffcb36a70",
+    "published": "archive/research/trainer/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/dataz.py",
+    "sha256": "6e9e7d31e429af1aef654af5b66bdd83521e760e8466758a127f1a939143855c",
+    "published": "archive/research/trainer/cgcnn/dataz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/dataz - Before_First row index fix.py",
+    "sha256": "389b2f2a058f31698892b008fa566ba738de96d24568cd24644d7533135d47db",
+    "published": "archive/research/trainer/cgcnn/dataz - Before_First row index fix.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/dataz-beforeSamplerange.py",
+    "sha256": "36c326964791ce58e27416041e1860924f72468e0f22a5bc7994d1d101bc1e02",
+    "published": "archive/research/trainer/cgcnn/dataz-beforeSamplerange.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/model_with_atom_analysis.py",
+    "sha256": "836f005bf65f66a02236da0dbd55e7d0786cce91e96037cdb2edb2f16252e60c",
+    "published": "archive/research/trainer/cgcnn/model_with_atom_analysis.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/dataz -befor-atom-analysis.py",
+    "sha256": "36c326964791ce58e27416041e1860924f72468e0f22a5bc7994d1d101bc1e02",
+    "published": "archive/research/trainer/cgcnn/dataz -befor-atom-analysis.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/model -before_shap.py",
+    "sha256": "76a87cac7daa76b1ddf9dca61c73de324d78eb7c12b9b82cafc8217f06bfcf00",
+    "published": "archive/research/trainer/cgcnn/model -before_shap.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/datan.py",
+    "sha256": "63d2c960e4e1ae7e9d19dde970d81030afc7c802de3ddd51f5e34aeb736a0898",
+    "published": "archive/research/trainer/cgcnn/datan.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/data.py",
+    "sha256": "b1c2fb38bda20676f2ab46bcf6a17d01487e44cd56b562c164bd53e2abe3b9b0",
+    "published": "archive/research/trainer/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/trainer/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "colab/Copy of cgcnn-learningCurves_1.0k.ipynb",
+    "sha256": "5a956648ca98a7f6e4a0fce6f0a125caf30d0e2d883ec4a7c7ddb97e56006365",
+    "published": "archive/research/colab/Copy of cgcnn-learningCurves_1.0k.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/SHAP_interprability_plots.ipynb",
+    "sha256": "1807120ea1cff219e6e4ee35a3f444019b0dbe1b8ecf4256047a37b6e2f2fef6",
+    "published": "archive/research/colab/SHAP_interprability_plots.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/SHAP_ANALYSIS_v1.5-class.ipynb",
+    "sha256": "1095f4dc87010531b0bcfeff72db6bd8e7e2abe0c949318794b59630cd764f7a",
+    "published": "archive/research/colab/SHAP_ANALYSIS_v1.5-class.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/Copy of SHAP_ANALYSIS_v1_4_cloud.ipynb",
+    "sha256": "3bef6d8321dea1b03acc5afe32ce667993b5364465ea51dbe0b458f2d75677a7",
+    "published": "archive/research/colab/Copy of SHAP_ANALYSIS_v1_4_cloud.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/cgcnn-learningCurves_1.0k.ipynb",
+    "sha256": "909f268a3a1d2e8473ab1d3716d21e48f7f8b5cb4e6d0e6961e465477e300443",
+    "published": "archive/research/colab/cgcnn-learningCurves_1.0k.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/SHAP_ANALYSIS_v1.3.ipynb",
+    "sha256": "997bf5c81718ddfb6a911ff1133c4241cf66ab3edbcbca973f56373af96af099",
+    "published": "archive/research/colab/SHAP_ANALYSIS_v1.3.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/hMOF_Dataprocessor_with_Reg2.0_kk.ipynb",
+    "sha256": "e1ad4269ce414207334f7738829b9380540e1b9fb9133c0bc742942e5e565258",
+    "published": "archive/research/colab/hMOF_Dataprocessor_with_Reg2.0_kk.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/SHAP_ANALYSIS_v1.6-class.ipynb",
+    "sha256": "32083f16e252765be7a48b2aacc5abc6780461bc19a65ccf58f62577cca897c7",
+    "published": "archive/research/colab/SHAP_ANALYSIS_v1.6-class.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/Copy of SHAP_ANALYSIS_v1.4-class.ipynb",
+    "sha256": "5173bee03c3d08d4ba37533a825036500ba1e95da585fdd46848097bb4d72f11",
+    "published": "archive/research/colab/Copy of SHAP_ANALYSIS_v1.4-class.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/SHAP_ANALYSIS_v1.2.ipynb",
+    "sha256": "9da627d051a45b7b7dca91a2f79857109bc6f950376341657c03f3ac34a6d4d1",
+    "published": "archive/research/colab/SHAP_ANALYSIS_v1.2.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/SHAP_ANALYSIS.ipynb",
+    "sha256": "06c727fe2fbfdecfa78661c2b1217814508b0c44689ef939d64cf7aad12e1e89",
+    "published": "archive/research/colab/SHAP_ANALYSIS.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/Copy of cgcnn-learningCurves.ipynb",
+    "sha256": "eebd66b8c637055b853f0ef4b27ab3e6cbd417bdea1d8c8be7ff6c83f688cf0d",
+    "published": "archive/research/colab/Copy of cgcnn-learningCurves.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/cgcnn-learningCurves.ipynb",
+    "sha256": "a8ca7ff3dffee68f93c25ec951f26ee9a87a513db2366e63909edc52c4385501",
+    "published": "archive/research/colab/cgcnn-learningCurves.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "colab/CGCNN_performance plots.ipynb",
+    "sha256": "28596e96ea1d5d3179357ee93d0492715356ffc75304e343122d49bb40158623",
+    "published": "archive/research/colab/CGCNN_performance plots.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "root/confusion matrix.ipynb",
+    "sha256": "d18a1117c21984e40a1aa6f9ed0f71af725e1612de8005ac1c37d51236dbf9e7",
+    "published": "archive/research/root/confusion matrix.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "root/transmitter.py",
+    "sha256": "63559fc29fbef1a581a56bd81c161d3f077fe4f76fc15c37cc2a0657282f143c",
+    "status": "omitted obsolete cloud/upload or desktop automation helper"
+  },
+  {
+    "source": "root/mainT.py",
+    "sha256": "54c1a2311a17e1e29391f3ef7c9a4d22724e92031aa5bd7ebe3c1be3883a4d41",
+    "published": "archive/research/root/mainT.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "root/Run_Multiclass_cgcnn.ipynb",
+    "sha256": "ce3fef694083cc84b7d937ec41b9b21a1c503b25e824815a06a7d9ac2ce88918",
+    "published": "archive/research/root/Run_Multiclass_cgcnn.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "root/hMOF_Dataprocessorv5.0_kk.ipynb",
+    "sha256": "a1f5f07eb70f7e7e13370d5791e03f794c123dc9f691cac4ee3faa97781b5f5d",
+    "published": "archive/research/root/hMOF_Dataprocessorv5.0_kk.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "root/ReadingUsingCIF_files.ipynb",
+    "sha256": "07a34ed3cb092f74e40f4c73ad9e8b4cf133672f34620339095a440d6140c100",
+    "published": "archive/research/root/ReadingUsingCIF_files.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/hMOF_Dataprocessorv6.0_kk.ipynb",
+    "sha256": "ceb9a3e16dfec0f5a846284facd43245ff03c00e5534b3be2cacaf70bb0e3ac4",
+    "published": "archive/research/legacy/Matscifolder/hMOF_Dataprocessorv6.0_kk.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/Multi_Class_CGCNN_v2.2.ipynb",
+    "sha256": "714d8af0483c754c9df6f0e48e1306e0712032ebe1b2059013b6ce9b01f3513b",
+    "published": "archive/research/legacy/Matscifolder/Multi_Class_CGCNN_v2.2.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/clicker.py",
+    "sha256": "5f65fb7dd32584f730c33b57a1dd0be94da57fa9064ece6010abcdbc15b5b38a",
+    "status": "omitted obsolete cloud/upload or desktop automation helper"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/mainz.py",
+    "sha256": "54c1a2311a17e1e29391f3ef7c9a4d22724e92031aa5bd7ebe3c1be3883a4d41",
+    "published": "archive/research/legacy/KK_Multiclass_cgcnn_1/mainz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/main.py",
+    "sha256": "1f1d17b7cade2501d1a8429ef2fab691f24731c9aa26b749b233def668c071b8",
+    "published": "archive/research/legacy/KK_Multiclass_cgcnn_1/main.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/predict.py",
+    "sha256": "0784abddc02052aaa0015bc405409a97ec066ae809befa6d54694b37707ee824",
+    "published": "archive/research/legacy/KK_Multiclass_cgcnn_1/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Multiclass_cgcnn/mainz.py",
+    "sha256": "54c1a2311a17e1e29391f3ef7c9a4d22724e92031aa5bd7ebe3c1be3883a4d41",
+    "published": "archive/research/legacy/Multiclass_cgcnn/mainz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Multiclass_cgcnn/main.py",
+    "sha256": "b95ac8c96572ee2884041a1b5b7586687a324ae88604eca0c5f47a7d4d7aaccb",
+    "published": "archive/research/legacy/Multiclass_cgcnn/main.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Multiclass_cgcnn/predict.py",
+    "sha256": "0784abddc02052aaa0015bc405409a97ec066ae809befa6d54694b37707ee824",
+    "published": "archive/research/legacy/Multiclass_cgcnn/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-classification/cgcnn_work_classification(group).ipynb",
+    "sha256": "ccbba7b636d86726fd0e90882c9d15b389f3f652e70caa38105f97a31bf0f174",
+    "published": "archive/research/legacy/cgcnn-classification/cgcnn_work_classification(group).ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/cgcnn-classification/predict.py",
+    "sha256": "8a06be3c90469382f2bbba0b64bf52026da0267c9986884b1d927d2ae5819186",
+    "published": "archive/research/legacy/cgcnn-classification/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/cgcnn_work_(group)3.ipynb",
+    "sha256": "7ceedfb94627899c7b663d8a1b3e12876ed69accede71ec97c20710e02dc997b",
+    "published": "archive/research/legacy/cgcnn-master/cgcnn_work_(group)3.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/cgcnn-master/reg of cgcnn_work_(group)3.ipynb",
+    "sha256": "5f30eb8e283a44717e76684978eecab59ed7b7c5e6430edce310a1fd91288863",
+    "published": "archive/research/legacy/cgcnn-master/reg of cgcnn_work_(group)3.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/cgcnn-master/main2.py",
+    "sha256": "432751ffd81c645d2d4a75cfaf4d478ceb9c6c004caf715dae4eedb2dddc6fa9",
+    "published": "archive/research/legacy/cgcnn-master/main2.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/cgcnn_work_classification(group).ipynb",
+    "sha256": "1494f2773a94298f12e67f5c93d2985628018169f66398b36dd9ab1d82086290",
+    "published": "archive/research/legacy/cgcnn-master/cgcnn_work_classification(group).ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/cgcnn-master/main1.py",
+    "sha256": "193c5b7df1e042cd35eb384ed002de7a7c81053267013be6b01c40c5aaa04ab4",
+    "published": "archive/research/legacy/cgcnn-master/main1.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/LICENSE",
+    "sha256": "29b499b111e32f8e39a0b121f317857a08eccbe9d6b34ba1704020cf6b99d4ba",
+    "published": "archive/research/legacy/cgcnn-master/LICENSE",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/predict.py",
+    "sha256": "8a06be3c90469382f2bbba0b64bf52026da0267c9986884b1d927d2ae5819186",
+    "published": "archive/research/legacy/cgcnn-master/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/README.md",
+    "sha256": "da6435db20071de3f6e9854afd1126c172917cdac7e5f402e4c97bc67159a189",
+    "published": "archive/research/legacy/cgcnn-master/README.md",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/main.py",
+    "sha256": "f108929d16e8ba6726c44b7b4e9d41a11fd1db50d0b12b4e48179988c804ea22",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/main.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/mof.py",
+    "sha256": "555e6d9927dbdd084b3ff6a68f8480f194a2aae9d8d48ca7f714cd6683bca334",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/mof.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/example_transferlearning.py",
+    "sha256": "8cb2115a9eb75e7536ebadcfb1627bcf1a537cafcfd5c4a8a2257e69ac76cf5d",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/example_transferlearning.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/example_train_65barmode.py",
+    "sha256": "901006325c3417d2535270473ad15cc39c32fe2b762c8c657bd4f76dca8d6836",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/example_train_65barmode.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/example_screen.py",
+    "sha256": "7be65d1b665912c615401966739325c34e461f232e39cdf724db8bdaa6d452f1",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/example_screen.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/example_predExperiment.py",
+    "sha256": "0a0c1c576d59eb8220c8313225e5d5b04721baeedf3e728a14ac65a3a3fd672c",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/example_predExperiment.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/README.md",
+    "sha256": "3da4654445b64ccc7e55154d80fda646d1cab2bdd9b3de04ce48031a3b3610de",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/README.md",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/MOF-CGCNN_compare/MOF-CGCNN/LICENSE",
+    "sha256": "a90aecf7f7d132966767c3fd9763b4f641994a49849fab0c62977ce10356c7ee",
+    "published": "archive/research/legacy/MOF-CGCNN_compare/MOF-CGCNN/LICENSE",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn_trainer.ipynb",
+    "sha256": "57581de42ce8382a63d6f6bfce5722f96d686bb0c87e4325f608326f4db126d2",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn_trainer.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/mainz.py",
+    "sha256": "afd753b81fd77b5033788deb15ca5dbcb2427177e3a6c89ff1abd1e55ba52832",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/mainz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/mainz - Copy before log.py",
+    "sha256": "c4487c0e5b5b6db2336353568897e857e6d8f14ff231b1107ce20e70d40d07e7",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/mainz - Copy before log.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn_h2_2bar_trainer.ipynb",
+    "sha256": "4eddf85e3b540977cf1e762ad1bab6cbcbaa7996fc3b16e93b04815bcdb01f43",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn_h2_2bar_trainer.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn_co2_0.05bar_trainer.ipynb",
+    "sha256": "aeb45f537cc34a66f0c6dbb95f8c659f860126882200be33dfba04f332721405",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn_co2_0.05bar_trainer.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/predict.py",
+    "sha256": "cca40d4516472c3442bff1336904256e11700fdee791d851769051063c474804",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn3000contin.ipynb",
+    "sha256": "38bf9e4155cb769e9d8e2b6ebf21f04f70123c5f28acaef880f6e37134af22f5",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/Run_cgcnn3000contin.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/README.md",
+    "sha256": "da6435db20071de3f6e9854afd1126c172917cdac7e5f402e4c97bc67159a189",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/README.md",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/predict.py",
+    "sha256": "0784abddc02052aaa0015bc405409a97ec066ae809befa6d54694b37707ee824",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/mainz.py",
+    "sha256": "54c1a2311a17e1e29391f3ef7c9a4d22724e92031aa5bd7ebe3c1be3883a4d41",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/mainz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/Run_Multiclass_cgcnn.ipynb",
+    "sha256": "bc3efa1a85ad82bc101a4da350810231d3656e8b128b08cfc0c470b1330c5b31",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/Run_Multiclass_cgcnn.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/mainn.py",
+    "sha256": "b95ac8c96572ee2884041a1b5b7586687a324ae88604eca0c5f47a7d4d7aaccb",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/mainn.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/main.py",
+    "sha256": "1f1d17b7cade2501d1a8429ef2fab691f24731c9aa26b749b233def668c071b8",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/main.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/mainz.py",
+    "sha256": "54c1a2311a17e1e29391f3ef7c9a4d22724e92031aa5bd7ebe3c1be3883a4d41",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/mainz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/Sara_Run_Multiclass_cgcnn.ipynb",
+    "sha256": "fb4358fa78f945c6066fbfa66fc0bff5ee3fe04125a730aec1c88058ae4428f8",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/Sara_Run_Multiclass_cgcnn.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/predict.py",
+    "sha256": "0784abddc02052aaa0015bc405409a97ec066ae809befa6d54694b37707ee824",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/main.py",
+    "sha256": "b95ac8c96572ee2884041a1b5b7586687a324ae88604eca0c5f47a7d4d7aaccb",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/main.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/predict.py",
+    "sha256": "0f67cd41adc7ef38685d58ee417d75de82c269cc2808d5ed9496f842b5a15cc1",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/predict.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/Run_cgcnn_trainer_tracy.ipynb",
+    "sha256": "572580228bc8142b98c28dd380b71a0a451d2adb7d95432c783c2fb7b1661377",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/Run_cgcnn_trainer_tracy.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn-learningCurves_1.0k.ipynb",
+    "sha256": "b459136410655902d2601312df7a4ed46fe05d73acef1dad6b15d368fe7f0c1e",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn-learningCurves_1.0k.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/mainz.py",
+    "sha256": "4f8c4ecd836538d93e2b3f8f593cdb0e829834a0a487b3ec051359e65f6d7d8e",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/mainz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/Run_Multiclass_cgcnn.ipynb",
+    "sha256": "d73be62c791aafcf62266f5c33408e040a1ff81ae63ad126696a5a89fa680181",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/Run_Multiclass_cgcnn.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/main.py",
+    "sha256": "b95ac8c96572ee2884041a1b5b7586687a324ae88604eca0c5f47a7d4d7aaccb",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/main.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/cgcnn/data.py",
+    "sha256": "b1c2fb38bda20676f2ab46bcf6a17d01487e44cd56b562c164bd53e2abe3b9b0",
+    "published": "archive/research/legacy/KK_Multiclass_cgcnn_1/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/cgcnn/dataz.py",
+    "sha256": "81a5d164199f4d2af1af3fba46bf884e57281f6f771cdb33122f3fcd4019c621",
+    "published": "archive/research/legacy/KK_Multiclass_cgcnn_1/cgcnn/dataz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/cgcnn/model.py",
+    "sha256": "df7d44dfcf12150e12e33dc02fad1a058b13e51fd9d2f8b61ab6ed6b2f705661",
+    "published": "archive/research/legacy/KK_Multiclass_cgcnn_1/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/KK_Multiclass_cgcnn_1/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/legacy/KK_Multiclass_cgcnn_1/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Multiclass_cgcnn/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/legacy/Multiclass_cgcnn/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Multiclass_cgcnn/cgcnn/dataz.py",
+    "sha256": "b9b277039542d82b15b282c608523d2d91329c510862de63a5e26c4fb2512e2f",
+    "published": "archive/research/legacy/Multiclass_cgcnn/cgcnn/dataz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Multiclass_cgcnn/cgcnn/model.py",
+    "sha256": "df7d44dfcf12150e12e33dc02fad1a058b13e51fd9d2f8b61ab6ed6b2f705661",
+    "published": "archive/research/legacy/Multiclass_cgcnn/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Multiclass_cgcnn/cgcnn/data.py",
+    "sha256": "63d2c960e4e1ae7e9d19dde970d81030afc7c802de3ddd51f5e34aeb736a0898",
+    "published": "archive/research/legacy/Multiclass_cgcnn/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/cgcnn/pythontest.py",
+    "sha256": "a201d942c057d72faac6ddb26b1889a0329fcd5f216bfa1b09a5eaee02b87ad6",
+    "published": "archive/research/legacy/cgcnn-master/cgcnn/pythontest.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/cgcnn/data.py",
+    "sha256": "c2f948f3b4f0dde52f114f2d4b010c5e54a2c884acba141dec4f347b2e11ea97",
+    "published": "archive/research/legacy/cgcnn-master/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/legacy/cgcnn-master/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/cgcnn/model.py",
+    "sha256": "4059a136d7bdf09f2c51d30736ab9957747a57346c1179f6dbc0ef1540ef0d7d",
+    "published": "archive/research/legacy/cgcnn-master/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/pre-trained/README.md",
+    "sha256": "68ebb54df69c3c88b0b0807c7d22b93e5ff82ec42876f74a62efe7928565f6b7",
+    "published": "archive/research/legacy/cgcnn-master/pre-trained/README.md",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/cgcnn/model.py",
+    "sha256": "76a87cac7daa76b1ddf9dca61c73de324d78eb7c12b9b82cafc8217f06bfcf00",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/cgcnn/datan.py",
+    "sha256": "63d2c960e4e1ae7e9d19dde970d81030afc7c802de3ddd51f5e34aeb736a0898",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/cgcnn/datan.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/cgcnn/data.py",
+    "sha256": "b1c2fb38bda20676f2ab46bcf6a17d01487e44cd56b562c164bd53e2abe3b9b0",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/cgcnn/dataz.py",
+    "sha256": "81a5d164199f4d2af1af3fba46bf884e57281f6f771cdb33122f3fcd4019c621",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/cgcnn/dataz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Multiclass_cgcnn/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/legacy/Matscifolder/Multiclass_cgcnn/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/cgcnn/dataz.py",
+    "sha256": "36c326964791ce58e27416041e1860924f72468e0f22a5bc7994d1d101bc1e02",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/cgcnn/dataz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/cgcnn/dataz1.py",
+    "sha256": "6e6c6f9e2744b641460b7f7a4ff7df02fa8295f2151680b656765e2643e43175",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/cgcnn/dataz1.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/cgcnn/model.py",
+    "sha256": "76a87cac7daa76b1ddf9dca61c73de324d78eb7c12b9b82cafc8217f06bfcf00",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/cgcnn/datan.py",
+    "sha256": "63d2c960e4e1ae7e9d19dde970d81030afc7c802de3ddd51f5e34aeb736a0898",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/cgcnn/datan.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/cgcnn/data.py",
+    "sha256": "b1c2fb38bda20676f2ab46bcf6a17d01487e44cd56b562c164bd53e2abe3b9b0",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/cgcnn_Trainer/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/legacy/Matscifolder/cgcnn_Trainer/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/dataz.py",
+    "sha256": "b9b277039542d82b15b282c608523d2d91329c510862de63a5e26c4fb2512e2f",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/dataz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/model.py",
+    "sha256": "df7d44dfcf12150e12e33dc02fad1a058b13e51fd9d2f8b61ab6ed6b2f705661",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/data.py",
+    "sha256": "63d2c960e4e1ae7e9d19dde970d81030afc7c802de3ddd51f5e34aeb736a0898",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/legacy/Matscifolder/Sara_Multiclass_cgcnn/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/dataz.py",
+    "sha256": "36c326964791ce58e27416041e1860924f72468e0f22a5bc7994d1d101bc1e02",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/dataz.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/model.py",
+    "sha256": "76a87cac7daa76b1ddf9dca61c73de324d78eb7c12b9b82cafc8217f06bfcf00",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/data.py",
+    "sha256": "63d2c960e4e1ae7e9d19dde970d81030afc7c802de3ddd51f5e34aeb736a0898",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/data.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published": "archive/research/legacy/Matscifolder/Tracy_Multiclass_cgcnn/cgcnn/__init__.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/modelz/model.py",
+    "sha256": "dc43a7dd3cb9d22b71060fa2a84f619b329a4a3b49adb169c525d68ffcb36a70",
+    "published": "archive/research/trainer/cgcnn/modelz/model.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "trainer/cgcnn/dataz/dataz_with 0additionalproperties.py",
+    "sha256": "7ee2d2eaab1520197e24fabf10632a2c9110826f3b14c4f7c184cba9fafe1bf9",
+    "published": "archive/research/trainer/cgcnn/dataz/dataz_with 0additionalproperties.py.txt",
+    "status": "reference only"
+  },
+  {
+    "source": "legacy/cgcnn-master/Copy of cgcnn_work_KK.ipynb",
+    "sha256": "0f9184a3827cc308942c28a0dc0576040427c983a677a182469719411aa5359c",
+    "published": "archive/research/legacy/cgcnn-master/Copy of cgcnn_work_KK.ipynb.json",
+    "status": "reference only; notebook outputs cleared"
+  }
+]

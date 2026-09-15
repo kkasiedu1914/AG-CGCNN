@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ag-cgcnn"
+version = "1.0.0"
+description = "Mechanistically informed MOF structure-property modeling with AG-CGCNN and SHAP"
+requires-python = ">=3.11"
+license = "MIT"
+readme = "README.md"
+authors = [{name = "Kwabena Koranteng Asiedu"}]
+dependencies = ["torch>=2.6", "numpy>=1.26", "pymatgen>=2025.1"]
+
+[project.optional-dependencies]
+explain = ["shap>=0.46", "matplotlib>=3.9"]
+notebooks = ["jupyterlab>=4.3", "nbformat>=5.10", "pandas>=2.2"]
+test = ["pytest>=8", "nbformat>=5.10", "shap>=0.46", "matplotlib>=3.9"]
+
+[project.scripts]
+agcgcnn-train = "agcgcnn.train:main"
+agcgcnn-predict = "agcgcnn.predict:main"
+agcgcnn-explain = "agcgcnn.explain:main"
+
+[project.urls]
+Paper = "https://doi.org/10.1021/acs.iecr.4c03301"
+Repository = "https://github.com/kkasiedu1914/AG-CGCNN"
+
+[tool.setuptools.packages.find]
+include = ["agcgcnn*", "cgcnn*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

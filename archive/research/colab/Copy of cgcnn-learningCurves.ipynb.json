@@ -1,0 +1,191 @@
+{
+ "nbformat": 4,
+ "nbformat_minor": 0,
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import os\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/trained models/')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/trained models/h2_models_30&32k_trained/')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "cd co2_3k_trained/"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "learncurveData = pd.read_csv('test_logs_20231110_172115.csv')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Plot learning metrices\n",
+    "# Metrices 'Precision Value', 'Recall Value', 'F-score Value'\n",
+    "def plot_metrics(df,metrics,title, filename):\n",
+    "    plt.figure(figsize=(10, 6))\n",
+    "\n",
+    "    # Corresponding colors for each metric\n",
+    "    colors = ['blue', 'green', 'red', 'purple', 'orange',]\n",
+    "\n",
+    "    for metric, color in zip(metrics, colors):\n",
+    "        plt.plot(df['Epoch'], df[metric], label=metric, color=color)\n",
+    "\n",
+    "    plt.xlabel('Epoch')\n",
+    "    plt.ylabel('Performance')\n",
+    "    plt.title(title)\n",
+    "    plt.legend()\n",
+    "    plt.grid(True)\n",
+    "\n",
+    "    # Save figure\n",
+    "    plt.savefig(filename)\n",
+    "\n",
+    "    plt.show()"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Titles :Learning Curve of Novel CGCNN classification Model of CO$_2$ storage at 0.05 bar 298 K in MOFs\n",
+    "plot_metrics(learncurveData,\n",
+    "             metrics = ['Loss Average', 'Accuracy Average','Precision Average', 'Recall Average', 'F-score Average'],\n",
+    "             filename ='average_Learning Curve of Novel CGCNN classification model of CO$_2$ storage in MOFs at 0.05 bar 298 K.png',\n",
+    "             title = 'Learning Curve of Novel CGCNN classification Model of H$_2$ storage at 100 bar 77 K in MOFs')\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Remove duplicates is your DataFrame\n",
+    "LearnDatacleaned_df = learncurveData.drop_duplicates(subset='Epoch', keep='last')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "plot_metrics(LearnDatacleaned_df,\n",
+    "            metrics = ['Loss Average', 'Accuracy Average'],\n",
+    "             filename ='Learning Curve of Novel CGCNN classification model of CO$_2$ storage in MOFs at 0.05 bar 298 K.png',\n",
+    "             title = 'Learning Curve of Novel CGCNN classification Model of CO$_2$ storage at 0.05 bar 298 K in MOFs')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "plot_metrics(LearnDatacleaned_df,\n",
+    "            metrics = ['Loss Value', 'Accuracy Value','Precision Value', 'Recall Value', 'F-score Value'],\n",
+    "             filename ='rough_Learning Curve of Novel CGCNN classification model of CO$_2$ storage in MOFs at 0.05 bar 298 K.png',\n",
+    "             title = 'Learning Curve of Novel CGCNN classification Model of CO$_2$ storage at 0.05 bar 298 K in MOFs')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ]
+}

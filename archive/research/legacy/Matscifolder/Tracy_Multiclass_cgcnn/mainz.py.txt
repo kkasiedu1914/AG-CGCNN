@@ -1,0 +1,784 @@
+import argparse
+import os
+import shutil
+import sys
+import time
+import warnings
+from random import sample
+import datetime
+
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn import metrics
+from torch.autograd import Variable
+from torch.optim.lr_scheduler import MultiStepLR
+
+from cgcnn.dataz import CIFData
+from cgcnn.dataz import collate_pool, get_train_val_test_loader
+from cgcnn.model import CrystalGraphConvNet_1
+
+
+# Some commanline parse definitions
+# Positional arguments
+parser = argparse.ArgumentParser(description='Crystal Graph Convolutional Neural Networks')
+parser.add_argument('data_options', metavar='OPTIONS', nargs='+',
+                    help='dataset options, started with the path to root dir, '
+                         'then other options')
+parser.add_argument('zipfile', metavar='ZIP FILE', nargs='+',
+                    help='The zip file name that contains the cif files,it is combined with the root dir, '
+                         'then other options')
+parser.add_argument('--id_prop',default='id_prop', type=str,metavar='FILE',
+                    help='The csv file name that contains additional crystal features')
+parser.add_argument('--use_features',default=['All'], metavar='LIST',type=list,nargs='+',
+                    help='Specify which additional features should be used')
+parser.add_argument('--useable_samples',default=None, metavar='INT',type=int, 
+                    help='Specify the total number of structures to be loaded \
+                      (should be the entier training,validation and testing set), default:None represents all structures')
+parser.add_argument('--model_name', metavar='TEXT',type=str,
+                    help='Specify which additional features should be used')
+
+
+parser.add_argument('--task', choices=['regression', 'classification'],
+                    default='regression', help='complete a regression or '
+                                                   'classification task (default: regression)')
+parser.add_argument('--disable-cuda', action='store_true',
+                    help='Disable CUDA')
+parser.add_argument('-j', '--workers', default=0, type=int, metavar='N',
+                    help='number of data loading workers (default: 0)')
+parser.add_argument('--epochs', default=30, type=int, metavar='N',
+                    help='number of total epochs to run (default: 30)')
+parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
+                    help='manual epoch number (useful on restarts)')
+parser.add_argument('-b', '--batch-size', default=256, type=int,
+                    metavar='N', help='mini-batch size (default: 256)')
+parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
+                    metavar='LR', help='initial learning rate (default: '
+                                       '0.01)')
+parser.add_argument('--lr-milestones', default=[100], nargs='+', type=int,
+                    metavar='N', help='milestones for scheduler (default: '
+                                      '[100])')
+parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                    help='momentum')
+parser.add_argument('--weight-decay', '--wd', default=0, type=float,
+                    metavar='W', help='weight decay (default: 0)')
+parser.add_argument('--print-freq', '-p', default=10, type=int,
+                    metavar='N', help='print frequency (default: 10)')
+parser.add_argument('--resume', default='', type=str, metavar='PATH',
+                    help='path to latest checkpoint (default: none)')
+parser.add_argument('--resumeTrain', default='', type=str, metavar='PATH',
+                    help='path to modelcheckpoint to continue training on new data (default: none)')
+
+
+# Training parsers Mutually exclusive (If one is speciied the others will not be specified)
+# Example if train-ratio is specified then train-size cannot be specified 
+train_group = parser.add_mutually_exclusive_group()
+train_group.add_argument('--train-ratio', default=None, type=float, metavar='N',
+                    help='number of training data to be loaded (default none)')
+train_group.add_argument('--train-size', default=None, type=int, metavar='N',
+                         help='number of training data to be loaded (default none)')
+
+
+# Validation prasers also Mutually exclusive 
+valid_group = parser.add_mutually_exclusive_group()
+valid_group.add_argument('--val-ratio', default=0.1, type=float, metavar='N',
+                    help='percentage of validation data to be loaded (default '
+                         '0.1)')
+valid_group.add_argument('--val-size', default=None, type=int, metavar='N',
+                         help='number of validation data to be loaded (default '
+                              '1000)')
+
+
+# Test prasers also Mutually exclusive 
+test_group = parser.add_mutually_exclusive_group()
+test_group.add_argument('--test-ratio', default=0.1, type=float, metavar='N',
+                    help='percentage of test data to be loaded (default 0.1)')
+test_group.add_argument('--test-size', default=None, type=int, metavar='N',
+                        help='number of test data to be loaded (default 1000)')
+
+# Other additional optional arguments
+parser.add_argument('--optim', default='SGD', type=str, metavar='SGD',
+                    help='choose an optimizer, SGD or Adam, (default: SGD)')
+parser.add_argument('--atom-fea-len', default=64, type=int, metavar='N',
+                    help='number of hidden atom features in conv layers')
+parser.add_argument('--h-fea-len', default=128, type=int, metavar='N',
+                    help='number of hidden features after pooling')
+parser.add_argument('--n-conv', default=3, type=int, metavar='N',
+                    help='number of conv layers')
+parser.add_argument('--n-h', default=1, type=int, metavar='N',
+                    help='number of hidden layers after pooling')
+parser.add_argument('--Additional_feat_num',default = 0, type=int, metavar='Feature number',
+                    help='number of additional input features')
+parser.add_argument('--Class_num',type=int, metavar='Clases',
+                    help='number of possible classes')
+
+parser.add_argument('--Target_num',type=int, metavar='Targets',
+                    help='number of targets to predict')
+
+
+# Parsing means you are analyzing and extracting the informantion that the user provides at the command line
+args = parser.parse_args(sys.argv[1:]) # Here we extract all the command line arguments except the name of this script
+# args is an object that contains attributes which contain all the comand line arguments. These attributes are like
+# dictionaries
+
+# Custom logic to check mutually inclusive options
+if not ((args.task == 'regression' and args.Target_num) or (args.task == 'classification' and args.Class_num)):
+    parser.error('Specified regrression or classification, please also specify number of targets to predict \
+                 or number of possible classes.')
+
+args.cuda = not args.disable_cuda and torch.cuda.is_available() # The conditions have to met at the same time
+# For cuda to be true. not just negates a boolean
+
+if args.task == 'regression':
+    best_mae_error = 1e10
+else:
+    best_mae_error = 0.
+
+
+def main():
+    global args, best_mae_error, date_time_str
+
+    # load data
+    dataset = CIFData(*args.data_options,*args.zipfile,args.id_prop,*args.use_features,args.useable_samples,
+                      task=args.task,targets = args.Target_num
+                      if args.Target_num else args.Class_num)
+    collate_fn = collate_pool
+    train_loader, val_loader, test_loader = get_train_val_test_loader(
+        dataset=dataset,
+        collate_fn=collate_fn,
+        batch_size=args.batch_size,
+        train_ratio=args.train_ratio,
+        num_workers=args.workers,
+        val_ratio=args.val_ratio,
+        test_ratio=args.test_ratio,
+        pin_memory=args.cuda,
+        train_size=args.train_size,
+        val_size=args.val_size,
+        test_size=args.test_size,
+        return_test=True)
+    
+
+    # Check the number of training samples
+    if len(dataset) < 500:
+        warnings.warn('Dataset has less than 500 data points. '
+                          'Lower accuracy is expected. ')
+        
+        sample_data_list = [dataset[i] for i in range(len(dataset))]
+        _, sample_target, _ = collate_pool(sample_data_list)
+    else:
+        
+        sample_data_list = [dataset[i] for i in sample(range(len(dataset)), 500)]
+
+        _, sample_target, _ = collate_pool(sample_data_list)
+    
+    
+
+    # obtain target value normalizer
+    if args.task == 'classification':
+        normalizer = Normalizer(sample_target[:, :-1])
+
+    else:
+        normalizer = Normalizer(sample_target)
+        target_normalizer = Normalizer(sample_target[:,-args.Target_num:])
+        
+        regNorm = {'normalizer':normalizer,
+                   'target_normalizer':target_normalizer}
+
+
+    # build model
+    structures, _, _ = dataset[0]
+    orig_atom_fea_len = structures[0].shape[-1]
+    nbr_fea_len = structures[1].shape[-1]
+    model = CrystalGraphConvNet_1(orig_atom_fea_len, nbr_fea_len,
+                                atom_fea_len=args.atom_fea_len,
+                                added_fea_len=args.Additional_feat_num,
+                                classnum = args.Class_num if args.task =='classification' else args.Target_num,
+                                n_conv=args.n_conv,
+                                h_fea_len=args.h_fea_len,
+                                n_h=args.n_h,
+                                classification=True if args.task =='classification' else False)
+    
+
+    if args.cuda:
+        model.cuda()
+
+    # define loss func and optimizer
+    if args.task == 'classification':
+        criterion = nn.NLLLoss()
+    else:
+        criterion = nn.MSELoss()
+    if args.optim == 'SGD':
+        optimizer = optim.SGD(model.parameters(), args.lr,
+                              momentum=args.momentum,
+                              weight_decay=args.weight_decay)
+    elif args.optim == 'Adam':
+        optimizer = optim.Adam(model.parameters(), args.lr,
+                               weight_decay=args.weight_decay)
+    else:
+        raise NameError('Only SGD or Adam is allowed as --optim')
+
+    # optionally resume from a checkpoint
+    if args.resume:
+        if os.path.isfile(args.resume):
+            print("=> loading checkpoint '{}'".format(args.resume))
+            checkpoint = torch.load(args.resume)
+            args.start_epoch = checkpoint['epoch']
+            best_mae_error = checkpoint['best_mae_error']
+            model.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            normalizer.load_state_dict(checkpoint['normalizer'])
+            try:
+                df_train = checkpoint['df_train'] 
+                df_test = checkpoint['df_test']
+            except:
+                print('=> No train/test logs found in this checkpoint. Logs will now be recorded for this training session')
+            print("=> loaded checkpoint '{}' (epoch {})"
+                  .format(args.resume, checkpoint['epoch']))
+        else:
+            print("=> no checkpoint found at '{}'".format(args.resume))
+
+    if args.resumeTrain:
+        if os.path.isfile(args.resumeTrain):
+            print("=> loading train point '{}'".format(args.resumeTrain))
+            checkpoint = torch.load(args.resumeTrain)
+            args.start_epoch = checkpoint['epoch']
+            best_mae_error = checkpoint['best_mae_error']
+            model.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            normalizer.load_state_dict(checkpoint['normalizer'])
+            try:
+                df_train = checkpoint['df_train'] 
+                df_test = checkpoint['df_test']
+            except:
+                print('=> No train/test logs found in this checkpoint. Logs will now be recorded for this training session')
+            print("=> loaded train point '{}'"
+                  .format(args.resumeTrain))
+        else:
+            print("=> no train point at '{}'".format(args.resumeTrain))
+
+
+    scheduler = MultiStepLR(optimizer, milestones=args.lr_milestones,
+                            gamma=0.1)
+    
+    # Recordlogs
+    if args.task == 'regression':
+        if (args.resume or args.resumeTrain):
+            try: 
+                df_train = df_train[['Epoch', 'Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Data Time Value', 'Data Time Average', 'Loss Value', 'Loss Average',
+                                    'MAE Value', 'MAE Average']]
+                df_test = df_test[['Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Loss Value', 'Loss Average',
+                                    'MAE Value', 'MAE Average']]
+            except:
+                print('=> Initializing Logging')
+                df_train = pd.DataFrame(columns=['Epoch', 'Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Data Time Value', 'Data Time Average', 'Loss Value', 'Loss Average',
+                                    'MAE Value', 'MAE Average'])
+                df_test = pd.DataFrame(columns=['Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Loss Value', 'Loss Average',
+                                    'MAE Value', 'MAE Average'])
+        else:
+            df_train = pd.DataFrame(columns=['Epoch', 'Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Data Time Value', 'Data Time Average', 'Loss Value', 'Loss Average',
+                                    'MAE Value', 'MAE Average'])
+            df_test = pd.DataFrame(columns=['Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Loss Value', 'Loss Average',
+                                    'MAE Value', 'MAE Average'])
+    else:
+        if (args.resume or args.resumeTrain):
+            try: 
+                df_train = df_train[['Epoch', 'Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Data Time Value', 'Data Time Average', 'Loss Value', 'Loss Average',
+                                    'Accuracy Value', 'Accuracy Average',
+                                    'Precision Value', 'Precision Average',
+                                    'Recall Value', 'Recall Average',
+                                    'F-score Value', 'F-score Average']]
+                
+                df_test = df_test[['Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Loss Value', 'Loss Average',
+                                    'Accuracy Value', 'Accuracy Average',
+                                    'Precision Value', 'Precision Average',
+                                    'Recall Value', 'Recall Average',
+                                    'F-score Value', 'F-score Average']]
+            except:
+                print('Initializing Logging')
+                df_train = pd.DataFrame(columns=['Epoch', 'Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Data Time Value', 'Data Time Average', 'Loss Value', 'Loss Average',
+                                    'Accuracy Value', 'Accuracy Average',
+                                    'Precision Value', 'Precision Average',
+                                    'Recall Value', 'Recall Average',
+                                    'F-score Value', 'F-score Average'])
+                df_test = pd.DataFrame(columns=['Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Loss Value', 'Loss Average',
+                                    'Accuracy Value', 'Accuracy Average',
+                                    'Precision Value', 'Precision Average',
+                                    'Recall Value', 'Recall Average',
+                                    'F-score Value', 'F-score Average']) 
+        else:
+            df_train = pd.DataFrame(columns=['Epoch', 'Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Data Time Value', 'Data Time Average', 'Loss Value', 'Loss Average',
+                                    'Accuracy Value', 'Accuracy Average',
+                                    'Precision Value', 'Precision Average',
+                                    'Recall Value', 'Recall Average',
+                                    'F-score Value', 'F-score Average'])
+            df_test = pd.DataFrame(columns=['Batch', 'Batch Time Value', 'Batch Time Average',
+                                    'Loss Value', 'Loss Average',
+                                    'Accuracy Value', 'Accuracy Average',
+                                    'Precision Value', 'Precision Average',
+                                    'Recall Value', 'Recall Average',
+                                    'F-score Value', 'F-score Average'])
+    
+    # Get the current date and time
+    now = datetime.datetime.now()
+    # Format the date and time as a string
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+
+    if args.resume or args.resumeTrain:
+        lastepochpt = args.start_epoch
+        continepochpt  = lastepochpt 
+        print(f'=> Last model training ended at epoch {continepochpt} ({lastepochpt+1} epochs). Hence continuing model training at epoch {lastepochpt} ({lastepochpt+2}th epoch)')
+
+    for epoch in range(args.start_epoch, args.epochs):
+        
+        if args.task == 'regression':
+            df_train = train(train_loader, model, criterion, optimizer, epoch, regNorm,df_train=df_train) 
+        else:
+            df_train = train(train_loader, model, criterion, optimizer, epoch, normalizer,df_train=df_train)
+        
+        if args.task == 'regression':
+        # evaluate on validation set   
+            mae_error, df_test = validate(val_loader, model, criterion, regNorm,df_test=df_test)
+        else:
+            mae_error, df_test = validate(val_loader, model, criterion, normalizer,df_test=df_test)
+
+        
+        if mae_error != mae_error:
+            print('Exit due to NaN')
+            sys.exit(1)
+
+        scheduler.step()
+
+        # remember the best mae_eror and save checkpoint
+        if args.task == 'regression':
+            is_best = mae_error < best_mae_error
+            best_mae_error = min(mae_error, best_mae_error)
+        else:
+            is_best = mae_error > best_mae_error
+            best_mae_error = max(mae_error, best_mae_error)
+
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'best_mae_error': best_mae_error,
+            'optimizer': optimizer.state_dict(),
+            'normalizer': normalizer.state_dict(),
+            'df_train': df_train,
+            'df_test':df_test,
+            'args': vars(args)
+        }, is_best)
+
+        # Create the filename
+        trainlogfilename = f"{args.model_name}_train_logs_{date_time_str}.csv"
+        testlogfilename = f"{args.model_name}_test_logs_{date_time_str}.csv"
+        # Save the DataFrame as a CSV file
+        df_train.to_csv(trainlogfilename)
+        df_test.to_csv(testlogfilename)
+    
+    
+    # test best model
+    print('---------Evaluate Model on Test Set---------------')
+    bestmodelname = args.model_name +'model_best'+'.pth.tar'
+    checkfilename= args.model_name +'checkpoint'+'.pth.tar'
+    try:
+        best_checkpoint = torch.load(bestmodelname)
+    except:
+        best_checkpoint = torch.load(checkfilename)
+    model.load_state_dict(best_checkpoint['state_dict'])
+    if args.task == 'regression':
+        validate(test_loader, model, criterion, regNorm, test=True)
+    else:
+        validate(test_loader, model, criterion, normalizer, test=True)
+
+
+
+def train(train_loader, model, criterion, optimizer, epoch, normalizer,**kwargs):
+        batch_time = AverageMeter()
+        data_time = AverageMeter()
+        losses = AverageMeter()
+        if 'df_train' in kwargs:
+            logs = []
+        if args.task == 'regression':
+            mae_errors = AverageMeter()
+        else:
+            accuracies = AverageMeter()
+            precisions = AverageMeter()
+            recalls = AverageMeter()
+            fscores = AverageMeter()
+            
+
+        # switch to train mode
+        model.train()
+
+        end = time.time()
+        for i, (input, target, _) in enumerate(train_loader):
+           
+            # measure data loading time
+            data_time.update(time.time() - end)
+
+            if args.cuda:
+                input_var = (Variable(input[0].cuda(non_blocking=True)),
+                            Variable(input[1].cuda(non_blocking=True)),
+                            input[2].cuda(non_blocking=True),
+                            [crys_idx.cuda(non_blocking=True) for crys_idx in input[3]])
+            else:
+                input_var = (Variable(input[0]),
+                            Variable(input[1]),
+                            input[2],
+                            input[3])
+                
+            # normalize target and features
+            if args.task == 'regression':
+                target_normed = normalizer['normalizer'].norm(target)
+            else:
+                target_normed = target[:,-1].view(-1).long()  # Do not change it 
+                additional_features = target[:, :-1]
+                additional_features = normalizer.norm(additional_features)
+            
+            if args.cuda:
+                if args.task == 'regression':
+                    additional_features = target_normed[:, :-args.Target_num].cuda(non_blocking=True)
+                    target_var = Variable(target_normed[:,-args.Target_num:].cuda(non_blocking=True))
+                else:
+                    target_var = Variable(target_normed.cuda(non_blocking=True))
+                    target = target_normed.cuda(non_blocking=True)
+
+            else:
+                if args.task == 'regression':
+                    additional_features = target_normed[:, :-args.Target_num]
+                    target_var = Variable(target_normed[:,-args.Target_num:])
+
+                else:
+                    target = target_normed # Do not do this regression. This is correct for classiication (last column)
+                    target_var = Variable(target_normed)
+
+
+
+            # compute output
+            output = model(*input_var,additional_features.cuda() if args.cuda else additional_features)
+            loss = criterion(output, target_var)
+
+            # measure accuracy and record loss
+            if args.task == 'regression':
+                mae_error = mae(normalizer['target_normalizer'].denorm(output.data.cpu()), target[:,-args.Target_num:])
+                losses.update(loss.data.cpu(), target.size(0))
+                mae_errors.update(mae_error, target.size(0))
+            else:
+                accuracy, precision, recall, fscore = \
+                    class_eval(output.data.cpu(), target)
+                losses.update(loss.data.cpu().item(), target.size(0))
+                accuracies.update(accuracy, target.size(0))
+                precisions.update(precision, target.size(0))
+                recalls.update(recall, target.size(0))
+                fscores.update(fscore, target.size(0))
+                
+            # compute gradient and do SGD step
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+            
+            if i % args.print_freq == 0:
+                if args.task == 'regression':
+                    print('Epoch: [{0}][{1}/{2}]\t'
+                        'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                        'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                        'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                        'MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
+                        epoch, i, len(train_loader)-1, batch_time=batch_time,
+                        data_time=data_time, loss=losses, mae_errors=mae_errors)
+                    )
+                else:
+                    print('Epoch: [{0}][{1}/{2}]\t'
+                        'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                        'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                        'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                        'Accu {accu.val:.3f} ({accu.avg:.3f})\t'
+                        'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
+                        'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
+                        'F1 {f1.val:.3f} ({f1.avg:.3f})'.format(
+                    epoch, i, len(train_loader)-1, batch_time=batch_time,
+                    data_time=data_time, loss=losses, accu=accuracies,
+                    prec=precisions, recall=recalls, f1=fscores))
+
+            if 'df_train' in kwargs:
+                if args.task == 'regression':
+                    # Append the log to the list
+
+                    logs = [epoch, i, batch_time.val, batch_time.avg,
+                                data_time.val, data_time.avg, losses.val.item(), losses.avg.item(),
+                                mae_errors.val.item(), mae_errors.avg.item()]
+                else:
+                    # Append the log to the list
+                    logs = [epoch, i, batch_time.val, batch_time.avg,
+                                data_time.val, data_time.avg, losses.val, losses.avg,
+                                accuracies.val, accuracies.avg,
+                                precisions.val, precisions.avg,
+                                recalls.val, recalls.avg,
+                                fscores.val, fscores.avg]
+            
+            if 'df_train' in kwargs:
+                # Add the new row to the train DataFrame
+                df_train = kwargs['df_train']
+                df_train.loc[len(kwargs['df_train'].index)] = logs
+
+            if i == len(train_loader) -1:
+                return df_train
+        
+
+
+def validate(val_loader, model, criterion, normalizer,test=False,**kwargs):
+        batch_time = AverageMeter()
+        losses = AverageMeter()
+       
+        if 'df_test' in kwargs:
+            df_test = kwargs['df_test']
+            logs = []
+
+        if args.task == 'regression':
+            mae_errors = AverageMeter()
+        else:
+            accuracies = AverageMeter()
+            precisions = AverageMeter()
+            recalls = AverageMeter()
+            fscores = AverageMeter()
+            
+        if test:
+            test_targets = []
+            test_preds = []
+            test_cif_ids = []
+
+        # switch to evaluate mode
+        model.eval()
+
+        end = time.time()
+        for i, (input, target, batch_cif_ids) in enumerate(val_loader):
+            if args.cuda:
+                with torch.no_grad():
+                    input_var = (Variable(input[0].cuda(non_blocking=True)),
+                                Variable(input[1].cuda(non_blocking=True)),
+                                input[2].cuda(non_blocking=True),
+                                [crys_idx.cuda(non_blocking=True) for crys_idx in input[3]])
+            else:
+                with torch.no_grad():
+                    input_var = (Variable(input[0]),
+                                Variable(input[1]),
+                                input[2],
+                                input[3])
+                    
+            if args.task == 'regression':
+                target_normed = normalizer['normalizer'].norm(target)
+            else:
+                target_normed = target[:,-1].view(-1).long()
+                additional_features = target[:, :-1]
+                additional_features = normalizer.norm(additional_features)
+
+            if args.cuda:
+                if args.task == 'regression':
+                    additional_features = target_normed[:, :-args.Target_num].cuda(non_blocking=True)
+                    target_var = Variable(target_normed[:,-args.Target_num:].cuda(non_blocking=True))
+                else:
+                    target_var = Variable(target_normed.cuda(non_blocking=True))
+                    target = target_normed.cuda(non_blocking=True)
+
+            else:
+                if args.task == 'regression':
+                    additional_features = target_normed[:, :-args.Target_num]
+                    target_var = Variable(target_normed[:,-args.Target_num:])
+                else:
+                    target = target_normed
+                    target_var = Variable(target_normed)
+
+            # compute output
+            output = model(*input_var,additional_features.cuda() if args.cuda else additional_features)
+            loss = criterion(output, target_var)
+
+            # measure accuracy and record loss
+            if args.task == 'regression':
+                mae_error = mae(normalizer['target_normalizer'].denorm(output.data.cpu()), target[:,-args.Target_num:])
+                losses.update(loss.data.cpu().item(), target.size(0))
+                mae_errors.update(mae_error, target.size(0))
+
+                if 'df_test' in kwargs:
+                    # Append the log to the list
+                    logs = [i, batch_time.val, batch_time.avg, losses.val, losses.avg,
+                            mae_errors.val.item(), mae_errors.avg.item()]
+                if test:
+                    test_pred = normalizer['target_normalizer'].denorm(output.data.cpu())
+                    test_target = target[:,-args.Target_num:]
+                    test_preds += test_pred.tolist()
+                    test_targets += test_target.tolist()
+                    test_cif_ids += batch_cif_ids
+            else:
+                accuracy, precision, recall, fscore = \
+                    class_eval(output.data.cpu(), target)
+                losses.update(loss.data.cpu().item(), target.size(0))
+                accuracies.update(accuracy, target.size(0))
+                precisions.update(precision, target.size(0))
+                recalls.update(recall, target.size(0))
+                fscores.update(fscore, target.size(0))
+
+                if 'df_test' in kwargs:
+                    logs = [i, batch_time.val, batch_time.avg,
+                            losses.val, losses.avg,
+                            accuracies.val, accuracies.avg,
+                            precisions.val, precisions.avg,
+                            recalls.val, recalls.avg,
+                            fscores.val, fscores.avg]
+                
+                # Gather the model predictions
+                if test:
+                        test_pred = torch.exp(output.data.cpu())
+                        test_target = target_var
+                        assert test_pred.shape[1] == args.Class_num 
+                        test_pred = torch.argmax(test_pred,axis=1)
+                        test_preds += test_pred[:].tolist()
+                        test_targets += test_target.view(-1).tolist() 
+                        test_cif_ids += batch_cif_ids
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % args.print_freq == 0:
+                if args.task == 'regression':
+                    print('Test: [{0}/{1}]\t'
+                        'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                        'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                        'MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
+                        i, len(val_loader)-1, batch_time=batch_time, loss=losses,
+                        mae_errors=mae_errors))
+                else:
+                    print('Test:[{0}/{1}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Accu {accu.val:.3f} ({accu.avg:.3f})\t'
+                      'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
+                      'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
+                      'F1 {f1.val:.3f} ({f1.avg:.3f})\t'.format(
+                    i, len(val_loader)-1, batch_time=batch_time, loss=losses,
+                    accu=accuracies, prec=precisions, recall=recalls,
+                    f1=fscores))
+
+            if 'df_test' in kwargs:
+                # Add the new row to the train DataFrame
+                df_test.loc[len(df_test.index)] = logs
+
+        if test:
+            star_label = '**'
+            import csv
+            if args.task == 'classification':
+                filename = f'{args.model_name}_test_results_{date_time_str}_{accuracies.avg}.csv'
+            else:
+                filename = f'{args.model_name}_test_results_{date_time_str}_{mae_errors.avg}.csv'
+            with open(filename, 'w') as f:
+                writer = csv.writer(f)
+                for cif_id, target, pred in zip(test_cif_ids, test_targets,
+                                                test_preds):
+                    writer.writerow((cif_id, target, pred))
+        else:
+            star_label = '*'
+
+        if args.task == 'regression':
+            print(' {star} MAE {mae_errors.avg:.3f}'.format(star=star_label,
+                                                            mae_errors=mae_errors))
+            return mae_errors.avg, df_test if 'df_test' in kwargs else None
+        else:
+            print(' {star} Accuracy {accu.avg:.3f}'.format(star=star_label,
+                                                accu=accuracies))
+            return accuracies.avg, df_test if 'df_test' in kwargs else None
+
+
+
+# Determines other performance metricies
+def class_eval(prediction, target):
+    prediction = np.exp(prediction.numpy())
+    target = target.cpu().numpy()
+    pred_label = np.argmax(prediction, axis=1)
+    target_label = np.squeeze(target)
+    if not target_label.shape:
+        target_label = np.asarray([target_label])
+    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(
+        target_label, pred_label, average='weighted')
+    accuracy = metrics.accuracy_score(target_label, pred_label)
+    return accuracy, precision, recall, fscore
+
+class Normalizer(object):
+    """Normalize a Tensor column by column and restore it later. """
+
+    def __init__(self, tensor):
+        """tensor is taken as a sample to calculate the mean and std"""
+        self.mean = torch.mean(tensor, dim=0)
+        self.std = torch.std(tensor, dim=0)
+
+    def norm(self, tensor):
+        return (tensor - self.mean) / self.std
+
+    def denorm(self, normed_tensor):
+        return normed_tensor * self.std + self.mean
+
+    def state_dict(self):
+        return {'mean': self.mean,
+                'std': self.std}
+
+    def load_state_dict(self, state_dict):
+        self.mean = state_dict['mean']
+        self.std = state_dict['std']
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+def mae(prediction, target):
+    """
+    Computes the mean absolute error between prediction and target
+
+    Parameters
+    ----------
+
+    prediction: torch.Tensor (N, 1)
+    target: torch.Tensor (N, 1)
+    """
+    return torch.mean(torch.abs(target - prediction))
+
+def save_checkpoint(state, is_best):
+    filename= args.model_name +'checkpoint'+'.pth.tar'
+    torch.save(state, filename)
+    if is_best:
+        bestmodelname = args.model_name +'model_best'+'.pth.tar'
+        shutil.copyfile(filename,bestmodelname)
+
+
+if __name__ == '__main__':
+    main()

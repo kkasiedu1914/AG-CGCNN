@@ -1,0 +1,169 @@
+{
+ "nbformat": 4,
+ "nbformat_minor": 0,
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "source": [
+    "\n",
+    " Change your prescent working directory to the cgcnn-master directory"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cd /content/drive/MyDrive/work_cgcnn/cgcnn-master"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Import packages for visuallization\n",
+    "import pandas as pd \n",
+    "import numpy as np\n",
+    "from matplotlib import pyplot as plt"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Install this package.\n",
+    "# You can skip this step if you have the package already installed\n",
+    "!pip install pymatgen"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Use this command to train a CGCNN model\n",
+    "#!python main.py --train-ratio 0.6 --val-ratio 0.2 --test-ratio 0.2 data/MOF_Dataset\n",
+    "!python main.py --train-ratio 0.6 --val-ratio 0.2 --test-ratio 0.2 --n-conv 7 --n-h 5 data/MOF_TestsetPLD"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Open the test_results file to view the model predictions\n",
+    "test_results = pd.read_csv('test_results.csv',\n",
+    "                           names=[\"Material_ID\", \"DFT_Predictions\", \"Model_Predictions\"])\n",
+    "test_results"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Removing the Material_ID column\n",
+    "remove_ids = test_results.columns[0]\n",
+    "test_results = test_results.drop(remove_ids,axis=1) \n",
+    "print(test_results.head(),'\\n')\n",
+    "Tmin = test_results.min(axis=0).min(axis = 0)\n",
+    "Tmax = test_results.max(axis=0).max(axis = 0)\n",
+    "DFT_Predictions = test_results.DFT_Predictions\n",
+    "Model_Predictions = test_results.Model_Predictions\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Visuallizing the CGCNN model performance\n",
+    "fig = plt.figure()\n",
+    "axis = fig.add_axes([0.1,0.1,1.5,1.5])\n",
+    "#plt.plot(model_predict,DFT_predict,)\n",
+    "axis.set_xlim(Tmin,Tmax)\n",
+    "axis.set_ylim(Tmin,Tmax)\n",
+    "x1 = np.linspace(*axis.get_xlim()) # generates 45 degree angle\n",
+    "axis.plot(x1, x1)  # add 45-deg line\n",
+    "axis.plot(DFT_Predictions,Model_Predictions,marker ='o',linestyle = 'none', color ='red', markersize = 10)\n",
+    "axis.set_title('Parity Plot',fontsize = 20)\n",
+    "axis.set_xlabel(\"DFT\",fontsize = 20)\n",
+    "axis.set_ylabel(\"Model Predictions\",fontsize = 20)"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "!python predict.py model_best.pth.tar data/MOF_Testset"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Open the test_results file to view the model predictions\n",
+    "test_results = pd.read_csv('test_results.csv',\n",
+    "                           names=[\"Material_ID\", \"DFT_Predictions\", \"Model_Predictions\"])\n",
+    "test_results"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Removing the Material_ID column\n",
+    "remove_ids = test_results.columns[0]\n",
+    "test_results = test_results.drop(remove_ids,axis=1) \n",
+    "print(test_results.head(),'\\n')\n",
+    "Tmin = test_results.min(axis=0).min(axis = 0)\n",
+    "Tmax = test_results.max(axis=0).max(axis = 0)\n",
+    "DFT_Predictions = test_results.DFT_Predictions\n",
+    "Model_Predictions = test_results.Model_Predictions\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Visuallizing the CGCNN model performance\n",
+    "fig = plt.figure()\n",
+    "axis = fig.add_axes([1,1,1.5,1.5])\n",
+    "#plt.plot(model_predict,DFT_predict,)\n",
+    "axis.set_xlim(Tmin,Tmax)\n",
+    "axis.set_ylim(Tmin,Tmax)\n",
+    "x1 = np.linspace(*axis.get_xlim()) # generates 45 degree angle\n",
+    "axis.plot(x1, x1)  # add 45-deg line\n",
+    "axis.plot(DFT_Predictions,Model_Predictions,marker ='o',linestyle = 'none', color ='green', markersize = 10)\n",
+    "axis.set_title('Parity Plot',fontsize = 20)\n",
+    "axis.set_xlabel(\"DFT\",fontsize = 20)\n",
+    "axis.set_ylabel(\"Model Predictions\",fontsize = 20)"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ]
+}

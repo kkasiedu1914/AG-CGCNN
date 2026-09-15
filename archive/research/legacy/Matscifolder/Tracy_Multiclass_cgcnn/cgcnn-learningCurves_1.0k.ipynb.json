@@ -1,0 +1,459 @@
+{
+ "nbformat": 4,
+ "nbformat_minor": 0,
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from google.colab import drive\n",
+    "drive.mount('/content/drive')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import os\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/trained models/')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "os.chdir('/content/drive/MyDrive/MatSci2_Group/cgcnn_Trainer/trained models/co2_models_60k_trained_bad/')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "ls"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "learncurveData = pd.read_csv('h2_multireg_100bar_2bar_test_logs_20231125_184905.csv')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Plot learning metrices\n",
+    "# Metrices 'Precision Value', 'Recall Value', 'F-score Value'\n",
+    "def plot_metrics(df,metrics,title, filename):\n",
+    "    plt.figure(figsize=(10, 6))\n",
+    "\n",
+    "    # Corresponding colors for each metric\n",
+    "    colors = ['blue', 'green', 'red', 'purple', 'orange',]\n",
+    "\n",
+    "    for metric, color in zip(metrics, colors):\n",
+    "        plt.plot(df.iloc[:,0], df[metric], label=metric, color=color)\n",
+    "\n",
+    "    plt.xlabel('Test instance (100K training samples)')\n",
+    "    plt.ylabel('Performance')\n",
+    "    plt.title(title)\n",
+    "    plt.legend()\n",
+    "    plt.grid(True)\n",
+    "\n",
+    "    # Save figure\n",
+    "    plt.savefig(filename)\n",
+    "\n",
+    "    plt.show()"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Titles :Learning Curve of Novel CGCNN classification Model of CO$_2$ storage at 0.05 bar 298 K in MOFs\n",
+    "# Titles Learning Curve of Novel CGCNN classification Model of H$_2$ storage at 100 bar 77 K in MOFs\n",
+    "# average_Learning Curve of Novel CGCNN classification Model of H$_2$ storage at 2 bar 77 K in MOFs\n",
+    "# Classification metrics = ['Loss Average', 'Accuracy Average','Precision Average', 'Recall Average', 'F-score Average']\n",
+    "\n",
+    "plot_metrics(learncurveData,\n",
+    "             metrics = ['Loss Average', 'MAE Average'],\n",
+    "             filename ='average_Learning Curve of Novel CGCNN Multiregression Model of H$_2$ storage for varying pressures at 77K in MOFs.png',\n",
+    "             title = 'Learning Curve of Novel CGCNN Multiregression Model of H$_2$ storage for varying pressures at 77K in MOFs')\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# Remove duplicates is your DataFrame\n",
+    "# Change for classification or regression\n",
+    "#LearnDatacleaned_df = learncurveData.drop_duplicates(subset='Batch', keep='last')\n",
+    "LearnDatacleaned_df = learncurveData.loc[learncurveData['Batch'] == 15]"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "# learncurveData, LearnDatacleaned_df\n",
+    "# For classification ['Loss Average', 'Accuracy Average']\n",
+    "plot_metrics(LearnDatacleaned_df,\n",
+    "            metrics = ['Loss Average', 'MAE Average'],\n",
+    "             filename ='Accuracy_Learning Curve of Novel CGCNN Multiregression Model of H$_2$ storage for varying pressures at 77K in MOFss.png',\n",
+    "             title = 'Learning Curve of Novel CGCNN Multiregression Model of H$_2$ storage for varying pressures at 77K in MOFs')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "#metrics = ['Loss Value', 'Accuracy Value','Precision Value', 'Recall Value', 'F-score Value'],\n",
+    "#             filename ='rough_Learning Curve of Novel CGCNN classification Model of CO$_2$ storage at 2.5 bar 298 K in MOFs.png',\n",
+    " #            title = 'Learning Curve of Novel CGCNN classification Model of CO$_2$ storage at 2.5 bar 298 K in MOFs')\n",
+    "plot_metrics(LearnDatacleaned_df,\n",
+    "             metrics = ['Loss Value', 'MAE Value'],\n",
+    "             filename ='Accuracy_Learning Curve of Novel CGCNN Multiregression Model of H$_2$ storage for varying pressures at 77K in MOFss.png',\n",
+    "             title = 'Learning Curve of Novel CGCNN Multiregression Model of H$_2$ storage for varying pressures at 77K in MOFs')"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "from scipy.stats import gaussian_kde\n",
+    "from sklearn.metrics import r2_score\n",
+    "\n",
+    "def parity_plot(x, y,title,x_label,y_label,filename):\n",
+    "    # Calculate the point density\n",
+    "    xy = np.vstack([x,y])\n",
+    "    z = gaussian_kde(xy)(xy)\n",
+    "\n",
+    "    fig, ax = plt.subplots()\n",
+    "    scatter = ax.scatter(x, y, c=z, s=100, cmap='gist_rainbow_r')  # Reverse the colormap\n",
+    "    ax.plot([min(x), max(x)], [min(y), max(y)], 'r-')\n",
+    "    plt.xlabel(x_label)\n",
+    "    plt.ylabel(y_label)\n",
+    "    plt.title(title)\n",
+    "    plt.grid(True)\n",
+    "\n",
+    "    # Add a colorbar\n",
+    "    cbar = plt.colorbar(scatter)\n",
+    "    cbar.set_label('Density')\n",
+    "\n",
+    "    # Calculate and print the R-squared value\n",
+    "    r_squared = r2_score(y, x)\n",
+    "    plt.text(0.05, 0.95, f'R² = {r_squared:.2f}', transform=ax.transAxes)\n",
+    "\n",
+    "    # Save figure\n",
+    "    plt.savefig(filename)\n",
+    "\n",
+    "    plt.show()\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "#load data\n",
+    "pariData = pd.read_csv('h2_reg_1_100bar_1ktrained_test_results_20231124_113115_4.037220478057861.csv', usecols=[1,2])\n",
+    "data = pariData.values\n",
+    "# Remove the brackets and convert the strings to floats\n",
+    "data = np.array([[float(x[1:-1]) for x in row] for row in data])"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "parity_plot(x = data[:,1],\n",
+    "            y= data[:,0],\n",
+    "            title='Parity Plot of CGCNN Model predictions of H$_2$ gravimetric uptake at 100 bar 77 K Vs GCMC Predictions',\n",
+    "            x_label = 'CGCNN Model Predictions',\n",
+    "            y_label = 'GCMC Predictions',\n",
+    "            filename = 'Parity Plot of CGCNN Model predictions of H$_2$ gravimetric uptake at 100 bar 77 K Vs GCMC predictions')\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "#load data\n",
+    "pariData = pd.read_csv('h2_reg_1_100bar_1ktrained_test_results_20231124_125023_8.928565979003906.csv', usecols=[1,2])\n",
+    "data = pariData.values\n",
+    "# Remove the brackets and convert the strings to floats\n",
+    "data = np.array([[float(x[1:-1]) for x in row] for row in data])\n",
+    "\n",
+    "parity_plot(x = data[:,1],\n",
+    "            y= data[:,0],\n",
+    "            title='Parity Plot of CGCNN Model predictions of H$_2$ gravimetric uptake at 100 bar 77 K Vs GCMC predictions (No global)',\n",
+    "            x_label = 'CGCNN Model Predictions',\n",
+    "            y_label = 'GCMC Predictions',\n",
+    "            filename = '(No global) Parity Plot of CGCNN Model predictions of H$_2$ gravimetric uptake at 100 bar 77 K Vs GCMC predictions')\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "markdown",
+   "source": [
+    "Parity Plot Functions (Alternatives)"
+   ],
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "from scipy.stats import gaussian_kde\n",
+    "\n",
+    "def parity_plot(x, y):\n",
+    "    # Calculate the point density\n",
+    "    xy = np.vstack([x,y])\n",
+    "    z = gaussian_kde(xy)(xy)\n",
+    "\n",
+    "    fig, ax = plt.subplots()\n",
+    "    ax.scatter(x, y, c=z, s=100)\n",
+    "    ax.plot([min(x), max(x)], [min(y), max(y)], 'r-')\n",
+    "    plt.xlabel('X')\n",
+    "    plt.ylabel('Y')\n",
+    "    plt.title('Parity Plot')\n",
+    "    plt.show()\n",
+    "\n",
+    "# Test the function with some data\n",
+    "x = np.random.normal(size=1000)\n",
+    "y = x * 3 + np.random.normal(size=1000)\n",
+    "parity_plot(x, y)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "from scipy.stats import gaussian_kde\n",
+    "from sklearn.metrics import r2_score\n",
+    "\n",
+    "def parity_plot(x, y):\n",
+    "    # Calculate the point density\n",
+    "    xy = np.vstack([x,y])\n",
+    "    z = gaussian_kde(xy)(xy)\n",
+    "\n",
+    "    fig, ax = plt.subplots()\n",
+    "    scatter = ax.scatter(x, y, c=z, s=100, cmap='RdYlBu_r')\n",
+    "    ax.plot([min(x), max(x)], [min(y), max(y)], 'r-')\n",
+    "    plt.xlabel('X')\n",
+    "    plt.ylabel('Y')\n",
+    "    plt.title('Parity Plot')\n",
+    "\n",
+    "    # Add a colorbar\n",
+    "    cbar = plt.colorbar(scatter)\n",
+    "    cbar.set_label('Density')\n",
+    "\n",
+    "    # Calculate and print the R-squared value\n",
+    "    r_squared = r2_score(y, x)\n",
+    "    plt.text(0.05, 0.95, f'R² = {r_squared:.2f}', transform=ax.transAxes)\n",
+    "\n",
+    "    plt.show()\n",
+    "\n",
+    "# Test the function with some data\n",
+    "x = np.random.normal(size=1000)\n",
+    "y = x * 3 + np.random.normal(size=1000)\n",
+    "parity_plot(x, y)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "from scipy.stats import gaussian_kde\n",
+    "from sklearn.metrics import r2_score\n",
+    "\n",
+    "def parity_plot(x, y):\n",
+    "    # Calculate the point density\n",
+    "    xy = np.vstack([x,y])\n",
+    "    z = gaussian_kde(xy)(xy)\n",
+    "\n",
+    "    fig, ax = plt.subplots()\n",
+    "    scatter = ax.scatter(x, y, c=z, s=100, cmap='gist_rainbow')\n",
+    "    ax.plot([min(x), max(x)], [min(y), max(y)], 'r-')\n",
+    "    plt.xlabel('X')\n",
+    "    plt.ylabel('Y')\n",
+    "    plt.title('Parity Plot')\n",
+    "\n",
+    "    # Add a colorbar\n",
+    "    cbar = plt.colorbar(scatter)\n",
+    "    cbar.set_label('Density')\n",
+    "\n",
+    "    # Calculate and print the R-squared value\n",
+    "    r_squared = r2_score(y, x)\n",
+    "    plt.text(0.05, 0.95, f'R² = {r_squared:.2f}', transform=ax.transAxes)\n",
+    "\n",
+    "    plt.show()\n",
+    "\n",
+    "# Test the function with some data\n",
+    "x = np.random.normal(size=1000)\n",
+    "y = x * 3 + np.random.normal(size=1000)\n",
+    "parity_plot(x, y)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "from scipy.stats import gaussian_kde\n",
+    "from sklearn.metrics import r2_score\n",
+    "\n",
+    "def parity_plot(x, y):\n",
+    "    # Calculate the point density\n",
+    "    xy = np.vstack([x,y])\n",
+    "    z = gaussian_kde(xy)(xy)\n",
+    "\n",
+    "    fig, ax = plt.subplots()\n",
+    "    scatter = ax.scatter(x, y, c=z, s=100, cmap='gist_rainbow_r')  # Reverse the colormap\n",
+    "    ax.plot([min(x), max(x)], [min(y), max(y)], 'r-')\n",
+    "    plt.xlabel('X')\n",
+    "    plt.ylabel('Y')\n",
+    "    plt.title('Parity Plot')\n",
+    "\n",
+    "    # Add a colorbar\n",
+    "    cbar = plt.colorbar(scatter)\n",
+    "    cbar.set_label('Density')\n",
+    "\n",
+    "    # Calculate and print the R-squared value\n",
+    "    r_squared = r2_score(y, x)\n",
+    "    plt.text(0.05, 0.95, f'R² = {r_squared:.2f}', transform=ax.transAxes)\n",
+    "\n",
+    "    plt.show()\n",
+    "\n",
+    "# Test the function with some data\n",
+    "x = np.random.normal(size=1000)\n",
+    "y = x * 3 + np.random.normal(size=1000)\n",
+    "parity_plot(x, y)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  },
+  {
+   "cell_type": "code",
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "from sklearn.metrics import r2_score\n",
+    "\n",
+    "def parity_plot(x, y):\n",
+    "    # Calculate the distance of each point from the parity line (y=x)\n",
+    "    distances = np.abs(y - x)\n",
+    "\n",
+    "    fig, ax = plt.subplots()\n",
+    "    scatter = ax.scatter(x, y, c=distances, s=100, cmap='gist_rainbow_r')\n",
+    "    ax.plot([min(x), max(x)], [min(y), max(y)], 'r-')\n",
+    "    plt.xlabel('X')\n",
+    "    plt.ylabel('Y')\n",
+    "    plt.title('Parity Plot')\n",
+    "\n",
+    "    # Add a colorbar\n",
+    "    cbar = plt.colorbar(scatter)\n",
+    "    cbar.set_label('Distance from parity')\n",
+    "\n",
+    "    # Calculate and print the R-squared value\n",
+    "    r_squared = r2_score(y, x)\n",
+    "    plt.text(0.05, 0.95, f'R² = {r_squared:.2f}', transform=ax.transAxes)\n",
+    "\n",
+    "    plt.show()\n",
+    "\n",
+    "# Test the function with some data\n",
+    "x = np.random.normal(size=1000)\n",
+    "y = x * 3 + np.random.normal(size=1000)\n",
+    "parity_plot(x, y)\n"
+   ],
+   "metadata": {},
+   "execution_count": null,
+   "outputs": []
+  }
+ ]
+}
