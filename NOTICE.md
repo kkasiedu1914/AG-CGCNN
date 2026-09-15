@@ -6,12 +6,6 @@ The graph convolution, atom/bond feature construction, neighbor aggregation and 
 
 Reference: Tian Xie and Jeffrey C. Grossman, *Crystal Graph Convolutional Neural Networks for an Accurate and Interpretable Prediction of Material Properties*, Physical Review Letters 120, 145301 (2018), DOI: 10.1103/PhysRevLett.120.145301.
 
-## AG-CGCNN contribution
-
-Kwabena Koranteng Asiedu's recovered implementation appends geometric descriptors after pooling, supports multiple targets or classes, and returns the combined representation for SHAP analysis. `cgcnn/model.py` follows that implementation and keeps its parameter names. The public-release tools repair data handling, training orchestration, checkpoint safety and documentation without introducing a different graph architecture.
-
-The accompanying paper is authored by Kwabena Koranteng Asiedu, Luke E. K. Achenie, Tracy Asamoah, Emmanuel Kwesi Arthur and Nana Yaw Asiedu. Authorship of the paper is not a claim that every coauthor wrote every software component. Source folder names and original comments preserve available contributor context.
-
 ## SHAP and research snapshots
 
 The explanation workflow adapts the author's SHAP Colab notebooks and uses the SHAP library. Please also cite Scott M. Lundberg and Su-In Lee, *A Unified Approach to Interpreting Model Predictions*, NeurIPS (2017), when appropriate.
