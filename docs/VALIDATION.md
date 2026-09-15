@@ -41,4 +41,4 @@ python scripts/check_release.py
 python -m pip_audit
 ```
 
-The CI configuration checks Python 3.11 and 3.12 on Linux. Those hosted CI results must be read separately; the local results above do not imply a completed remote CI run.
+The CI configuration checks Python 3.11 and 3.12 on Linux. The [initial hosted run](https://github.com/kkasiedu1914/AG-CGCNN/actions/runs/35004468958) passed all 21 tests and source-hygiene checks on both versions. Its dependency audit passed on Python 3.12 and flagged the runner's preinstalled setuptools 79.0.1 on Python 3.11 (PYSEC-2026-3447; reported fixed version 83.0.0). The build requirement and CI setup now require setuptools 83 or newer. Consult [GitHub Actions](https://github.com/kkasiedu1914/AG-CGCNN/actions) for the latest audit result. The unpublished local AG-CGCNN package itself is not in PyPI's advisory database; its code is covered by the source review and tests, not that database check.

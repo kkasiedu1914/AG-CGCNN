@@ -45,6 +45,7 @@ cd AG-CGCNN
 python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 # Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip "setuptools>=83" wheel
 python -m pip install -e ".[notebooks,explain,test]"
 ```
 
