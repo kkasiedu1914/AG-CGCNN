@@ -13,7 +13,3 @@ The explanation workflow adapts the author's SHAP Colab notebooks and uses the S
 The historical archive includes comparison implementations and upstream-derived experiments. It is provided as reference source with original notices retained; it is not installed, executed by tests or presented as independently authored release code. Any third-party component remains subject to its original license. The source manifest records recovered file names and hashes.
 
 The `legacy/MOF-CGCNN_compare/MOF-CGCNN` comparison snapshots derive from [Ruihan Wang's MOF-CGCNN](https://github.com/ruihwang/MOF-CGCNN), Copyright (c) 2021 Ruihan Wang. Its full MIT notice is retained in [third_party/MOF-CGCNN-LICENSE](third_party/MOF-CGCNN-LICENSE). That comparison architecture is not the AG-CGCNN release architecture.
-
-## Figures and data
-
-Paper figure crops are by Asiedu et al. (2025), licensed **CC BY 4.0**, not MIT. They are adapted only by cropping away page furniture and captions. See `docs/figures/README.md`. External datasets and any future model-weight releases retain their own licensing and attribution requirements.
